@@ -39,7 +39,7 @@ const Header = () => {
         >
           {/* Logo */}
           <h1 className="text-[22px] md:text-[30px] text-white hover:tracking-wider transition-all duration-300">
-            Abdul.Rahim
+            Abdul.R
           </h1>
 
           {/* Navigation Links */}
