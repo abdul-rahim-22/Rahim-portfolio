@@ -1,0 +1,245 @@
+@import "tailwindcss";
+ #root {
+  max-width: 100%;
+  margin: 0 auto;
+  text-align: center;
+  background-color: #FEFDF8;
+}
+
+*{
+  /* font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; */
+ /* font-family: "Space Mono", monospace;
+ font-weight: 700; */
+ font-family: "Oswald", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+html {
+  scroll-behavior: smooth;
+}
+body{
+  background-color: #FEFDF8;
+}
+.fontforever{
+  font-family: "Oswald", sans-serif;
+  font-weight: 900;
+  font-style: normal;
+  background-color: #FEFDF8;
+}
+
+
+
+.client-slider-container {
+  position: relative;
+  overflow: hidden;
+  padding: 30px 0;
+  width: 100%;
+}
+
+.client-slider {
+  display: flex;
+  align-items: center;
+  animation: scroll-left 25s linear infinite;
+}
+
+#client-slider-2 {
+  animation: scroll-right 25s linear infinite;
+}
+
+/* Make it look zig-zag: every odd image goes 30% down */
+.client-slider img {
+  height: 300px;
+  width: 300px;
+  margin: 0 20px;
+  border-radius: 15px;
+  object-fit: cover;
+  border: 5px solid rgb(0, 0, 0)  ;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+
+
+.client-slider img:nth-child(odd) {
+  transform: translateY(10%);
+}
+
+.client-slider img:nth-child(even) {
+  transform: translateY(0);
+}
+
+/* Optional hover */
+.client-slider img:hover {
+  transform: scale(1.05) rotate(5deg);
+    transform: rotateY(15deg) translateY(5px);
+  transition: transform 0.5s ease;
+  cursor: pointer;
+}
+
+/* Infinite seamless scroll (no jump) */
+@keyframes scroll-left {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes scroll-right {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+/* Fade edges */
+.client-slider-container::before,
+.client-slider-container::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 150px;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.client-slider-container::before {
+  left: 0;
+  background: linear-gradient(to right, rgb(252, 252, 252), transparent);
+}
+
+.client-slider-container::after {
+  right: 0;
+  background: linear-gradient(to left, rgb(252, 252, 252), transparent);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .client-slider img {
+    height: 220px;
+    margin: 0 15px;
+  }
+}
+
+@media (max-width: 768px) {
+  .client-slider img {
+    height: 180px;
+    margin: 0 10px;
+  }
+
+  .client-slider img:nth-child(odd) {
+    transform: translateY(20%);
+  }
+}
+
+@media (max-width: 480px) {
+  .client-slider img {
+    height: auto;
+    max-height: 150px;
+    width: 100%;
+    margin: 0 5px;
+    border-radius: 12px;
+  }
+
+  .client-slider img:nth-child(odd) {
+    transform: translateY(10%);
+  }
+
+  .client-slider-container::before,
+  .client-slider-container::after {
+    width: 60px;
+  }
+}
+
+.carousel {
+  overflow: hidden;
+  white-space: nowrap;
+  width: 100%;
+  background: #000; /* optional */
+  color: #fff;
+  margin-bottom: 10px; 
+  padding-top:10px;
+  padding-bottom: 10px;     /* optional */
+}
+
+.carousel-track {
+  display: inline-flex;
+  animation: scroll 30s linear infinite;
+}
+
+.carousel-track h1 {
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 0 1rem;
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+
+.text-carousel {
+  overflow: hidden;
+  white-space: nowrap;
+  width: 100%;
+  background: #111;
+  color: #fff;
+  padding-top:10px;
+  padding-bottom: 10px;
+}
+
+.text-slider {
+  display: inline-flex;
+  animation: slideRight 30s linear infinite;
+}
+
+.text-slider h1 {
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 0 1rem;
+}
+
+@keyframes slideRight {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+
+.hire-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Before pseudo-element = emoji */
+.hire-btn::before {
+  content: "😄";
+  position: absolute;
+  right: -40px;
+  top: 50%;
+  transform: translateY(-50%) rotate(0deg);
+  opacity: 0;
+  transition: all 0.5s ease;
+}
+
+/* On hover */
+.hire-btn:hover::before {
+  right: 6px;
+  opacity: 1;
+  transform: translateY(-50%) rotate(360deg);
+}
+.hire-btn:hover{
+  /* padding-left: 0px !important; */
+  padding-right: 30px !important;
+}
