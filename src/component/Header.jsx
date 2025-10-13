@@ -59,9 +59,10 @@ const Header = () => {
               <LocalTimeWithCountry/>
           </div>
           {/* Hire Me Button */}
-          <button className="bg-[white] text-black px-4 md:px-5 py-1 rounded-[15px] hover:bg-white text-[16px] md:text-[20px] hover:text-black hover:tracking-wider transition-all duration-300 hire-btn " >
-            Hire Me
-          </button>  
+          <a  className="bg-[white] text-black px-4 md:px-5 py-1 rounded-[15px] hover:bg-white text-[16px] md:text-[20px] hover:text-black hover:tracking-wider transition-all duration-300 hire-btn"  href="default.asp" target="_blank">Hire Me</a>
+          {/* // <button className="bg-[white] text-black px-4 md:px-5 py-1 rounded-[15px] hover:bg-white text-[16px] md:text-[20px] hover:text-black hover:tracking-wider transition-all duration-300 hire-btn " >
+          //   Hire Me
+          // </button>   */}
         </div>
       </div>
     </div>
