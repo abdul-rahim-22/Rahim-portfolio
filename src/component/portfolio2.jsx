@@ -1,4 +1,5 @@
 import React from 'react'
+import Arrowimag from 'src/assets/down-arrow.png'
 
 function Portfolio2() {
     return (
