@@ -29,11 +29,11 @@ function About() {
 
         <p className="text-[20px] md:text-[24px] leading-relaxed text-gray-700">
   I’m <span className="font-semibold text-gray-900">Abdul Rahim</span>
-  <img
+  {/* <img
     src="src/assets/WhatsApp Image 2025-10-07 at 19.48.58.jpeg"
     alt="Abdul Rahim"
     className="inline-block w-[40px] h-[50px] align-middle mx-1 rounded-50"
-  />
+  /> */}
   and I design experiences that people love to use. I focus on making digital
   products that feel intuitive and easy, while also solving real problems. My
   goal is to create clean, thoughtful designs that make a difference for both
