@@ -28,7 +28,7 @@ function About() {
         </h2>
 
         <p className="text-[20px] md:text-[24px] leading-relaxed text-gray-700">
-  I’m <span className="font-semibold text-gray-900">Abdul Rahim</span> 
+  I’m Abdul Rahim
   {/* <img
     src="src/assets/WhatsApp Image 2025-10-07 at 19.48.58.jpeg"
     alt="Abdul Rahim"
