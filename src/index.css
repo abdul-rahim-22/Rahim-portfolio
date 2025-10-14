@@ -251,7 +251,7 @@ body{
 }
 
 .name-btn::before {
-  content: "💫"; /* or "Rahim" */
+  content: "ahim"; /* or "Rahim" */
   position: absolute;
   right: -25px;
   top: 50%;
