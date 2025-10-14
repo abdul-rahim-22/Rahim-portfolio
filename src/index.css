@@ -243,6 +243,25 @@ body{
   /* padding-left: 0px !important; */
   padding-right: 30px !important;
 }
+.name-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Before pseudo-element = emoji */
+.name-btn::before {
+  content: "😄";
+  position: absolute;
+  right: -40px;
+  top: 50%;
+  transform: translateY(-50%) rotate(0deg);
+  opacity: 0;
+  transition: all 0.5s ease;
+}
+
+
+
+
 .name-btn:hover::before{
   right: 6px;
   opacity: 1;
