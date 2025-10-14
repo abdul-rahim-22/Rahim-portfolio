@@ -244,9 +244,9 @@ body{
   padding-right: 30px !important;
 }
 .name-btn:hover::after {
-  left: 6px;
+  right: 6px;
   opacity: 1;
-  transform: translateY(-50%);
+  transform: translateY(50%);
 }
 .name-btn:hover{
   /* padding-left: 0px !important; */
