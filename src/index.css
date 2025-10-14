@@ -245,23 +245,26 @@ body{
 }
 .name-btn {
   position: relative;
-  display: inline-block;
-  transition: all 0.3s ease;
+  padding-right: 20px;
+  transition: padding-right 0.3s ease;
+  cursor: pointer;
 }
 
-.name-btn::after {
-  content: " Abdul Rahim"; /* full name text */
+.name-btn::before {
+  content: "😊"; /* or "Rahim" */
   position: absolute;
-  left: 75px; /* adjust to match end of “Abdul.R” */
+  right: -25px;
   top: 50%;
-  transform: translateY(-50%);
+  transform: translateY(-20%);
   opacity: 0;
-  white-space: nowrap;
-  transition: all 0.4s ease;
-  color: #fff;
+  transition: right 0.4s ease, opacity 0.4s ease;
 }
 
-.name-btn:hover::after {
-  left: 115px; /* slides slightly in */
+.name-btn:hover {
+  padding-right: 40px;
+}
+
+.name-btn:hover::before {
+  right: 8px;
   opacity: 1;
 }
