@@ -48,8 +48,8 @@ function Herosection() {
   // }, []);
 
   return (
-    <section  className="herosection" >
-      <div className="flex flex-col items-center justify-center text-center  pt-10 pb-10">
+    <section>
+      <div className="flex flex-col items-center justify-center text-center bg-[#FEFDF8] pt-10 pb-10">
         <div className="max-w-[1000px]">
           {/* Heading */}
           <h1 className="fontforever  sm:text-[60px] md:text-[80px] lg:text-[60px] leading-tight font-semibold opacity-100 ">
