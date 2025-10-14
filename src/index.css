@@ -245,7 +245,12 @@ body{
 }
 .name-btn {
   position: relative;
-  overflow: hidden;
+  /* overflow: hidden; */
+}
+.name-btn:hover {
+  position: relative;
+  padding-right: 50px;
+  /* overflow: hidden; */
 }
 
 /* Before pseudo-element = emoji */
