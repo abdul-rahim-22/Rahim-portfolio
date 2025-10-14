@@ -243,25 +243,3 @@ body{
   /* padding-left: 0px !important; */
   padding-right: 30px !important;
 }
-.name-btn {
-  position: relative;
-}
-
-.name-btn::before {
-  content: "😊"; /* or "Rahim" */
-  position: absolute;
-  right: -25px;
-  /* top: 50%; */
-  transform: translateY(-20%);
-  opacity: 0;
-  transition: right 0.4s ease, opacity 0.4s ease;
-}
-
-/* .name-btn:hover {
-  padding-right: 40px;
-} */
-
-.name-btn:hover::before {
-  right: 8px;
-  opacity: 1;
-}
