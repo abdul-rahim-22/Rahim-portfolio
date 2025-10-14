@@ -5,10 +5,10 @@ function Portfolio2() {
     return (
         <div className='flex  flex-col justify-center items-center'>
             <h1 className='text-[90px] font-extrabold'>
-                Featured <span className='text-[#8e827c] pb-10'>work</span>
+                Featured <span className='text-[#8e827c] '>work</span>
             </h1>
             {/* <img src={Arrowimag} className='w-15 h-15'></img> */}
-            <p className="text-[20px] md:text-[24px] leading-relaxed text-gray-700 w-[400px] pt-10 ">
+            <p className="text-[20px] md:text-[24px] leading-relaxed text-gray-700 w-[400px] ">
                 We create innovative and purposeful designs that not only capture attention but also drive meaningful results.
             </p>
         </div>
