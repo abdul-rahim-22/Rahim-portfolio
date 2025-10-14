@@ -9,13 +9,14 @@ import About from './component/About.jsx'
 import {TextInfiniteCarousel,Textcourcorl} from './component/textcourcorl.jsx'
 import Portfolio2 from './component/portfolio2.jsx'
 import LocalTimeWithCountry from './component/localtime.jsx'
-import { SpeedInsights } from "@vercel/speed-insights/react"
+import { SpeedInsights } from '@vercel/speed-insights/react';
+
 
 
 
 createRoot(document.getElementById('root')).render(
   <>
-  <SpeedInsights/>
+  <SpeedInsights />
   <Header/>
   <Herosection/>
   <Textcourcorl/>
