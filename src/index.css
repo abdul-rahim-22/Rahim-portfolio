@@ -250,7 +250,7 @@ body{
 
 /* Before pseudo-element = emoji */
 .name-btn::before {
-  content: "😄";
+  content: "ahim";
   position: absolute;
   right: -40px;
   top: 50%;
