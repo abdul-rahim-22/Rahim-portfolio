@@ -1,30 +1,4 @@
 
-
-
-// const Header = () => {
-//   return (
-//     <div className="w-full sticky top-0 pt-[10px] z-10 bg-[#fefdf800]">
-//       <div className="max-w-[1200px] mx-auto flex justify-center items-center gap-70 " >
-//       {/* <TextPressure/> */}
-
-//         <div className="flex gap-10 text-lg font-medium py-2  bg-[#000000] rounded-[25px] backdrop-blur-sm
-//       border border-[#FEFDF8] pr-10 pl-10   justify-center items-center ">
-//        <h1 className="text-[30px] text-white hover:tracking-wider transition-all duration-300 ">Abdul.R</h1>
-//           <h4 className="cursor-pointer text-white hover:tracking-wider transition-all duration-300">Home</h4>
-//           <h4 className="cursor-pointer text-white hover:tracking-wider transition-all duration-300">About</h4>
-//           <h4 className="cursor-pointer text-white hover:tracking-wider transition-all duration-300">Work</h4>
-//           <h4 className="cursor-pointer text-white hover:tracking-wider transition-all duration-300">Contact</h4>
-//            <button className="bg-[#00f7ff] text-black px-5 pt-1 pb-1 rounded-[15px] hover:bg-white text-[20px]  hover:text-black  hover:tracking-wider transition-all duration-300">
-//           Hire Me
-//         </button>
-//         </div>
-
-//       </div>
-//     </div>
-//   )
-// }
-
-// export default Header;
 import  LocalTimeWithCountry from './localtime'
 
 const Header = () => {
@@ -39,7 +13,7 @@ const Header = () => {
         >
           {/* Logo */}
           <h1 className="text-[22px] md:text-[30px] text-white hover:tracking-wider transition-all duration-300 name-btn">
-            Abdul.R
+           <span><img src='src/assets/Untitled design (2).png'></img></span> Abdul.R
           </h1>
 
           {/* Navigation Links */}
