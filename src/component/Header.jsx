@@ -97,7 +97,6 @@
 
 
 
-
 import { useState } from "react";
 import LocalTimeWithCountry from "./localtime";
 
@@ -105,15 +104,16 @@ const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <div className="w-full sticky top-0 z-10 bg-[#fefdf800] pt-2">
+    <div className="w-full sticky top-0 z-20 bg-[#fefdf800] pt-2">
       <div className="max-w-[1200px] mx-auto flex justify-center items-center px-4">
         {/* =============== DESKTOP HEADER =============== */}
         <div
           id="desktopHeader"
           className="hidden md:flex flex-wrap md:flex-nowrap justify-center items-center gap-4 md:gap-10 
           text-sm md:text-lg font-medium py-2 bg-[#000000] rounded-[25px]
-          border  px-5 md:px-10"
+          border px-5 md:px-10"
         >
+          {/* Logo */}
           <h1 className="text-[22px] md:text-[30px] text-white hover:tracking-wider transition-all duration-300 name-btn flex items-center gap-2">
             Abdul.R
           </h1>
@@ -159,33 +159,58 @@ const Header = () => {
           {/* Hamburger Icon */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="text-white text-[25px]"
+            className="text-white text-[28px]"
           >
             {menuOpen ? "✖" : "☰"}
           </button>
 
-          {/* Mobile Dropdown Menu */}
+          {/* Mobile Fullscreen Menu */}
           <div
-            className={`absolute top-[70px] left-0 w-full bg-black text-white flex flex-col items-center gap-5 py-5 transition-all duration-500 ${
-              menuOpen ? "opacity-100 visible" : "opacity-0 invisible"
+            className={`fixed top-0 left-0 w-full h-screen bg-black text-white flex flex-col justify-center items-center gap-8 text-[22px] transition-all duration-500 ${
+              menuOpen
+                ? "opacity-100 visible translate-y-0"
+                : "opacity-0 invisible -translate-y-10"
             }`}
           >
-            <h4 className="cursor-pointer hover:tracking-wider transition-all duration-300">
+            {/* Close Button inside Menu */}
+            <button
+              onClick={() => setMenuOpen(false)}
+              className="absolute top-6 right-6 text-[30px] font-bold"
+            >
+              ✖
+            </button>
+
+            {/* Menu Links */}
+            <h4
+              onClick={() => setMenuOpen(false)}
+              className="cursor-pointer hover:tracking-wider transition-all duration-300"
+            >
               Home
             </h4>
-            <h4 className="cursor-pointer hover:tracking-wider transition-all duration-300">
+            <h4
+              onClick={() => setMenuOpen(false)}
+              className="cursor-pointer hover:tracking-wider transition-all duration-300"
+            >
               About
             </h4>
-            <h4 className="cursor-pointer hover:tracking-wider transition-all duration-300">
+            <h4
+              onClick={() => setMenuOpen(false)}
+              className="cursor-pointer hover:tracking-wider transition-all duration-300"
+            >
               Work
             </h4>
-            <h4 className="cursor-pointer hover:tracking-wider transition-all duration-300">
+            <h4
+              onClick={() => setMenuOpen(false)}
+              className="cursor-pointer hover:tracking-wider transition-all duration-300"
+            >
               Contact
             </h4>
+
             <LocalTimeWithCountry />
 
+            {/* Hire Me Button */}
             <a
-              className="bg-white text-black px-5 py-2 rounded-[15px] hover:tracking-wider transition-all duration-300 text-[18px]"
+              className="bg-white text-black px-6 py-3 rounded-[15px] hover:tracking-wider transition-all duration-300 text-[20px]"
               href="https://wa.me/03164949427"
               target="_blank"
               rel="noreferrer"
@@ -200,7 +225,6 @@ const Header = () => {
 };
 
 export default Header;
-
 
 
 
