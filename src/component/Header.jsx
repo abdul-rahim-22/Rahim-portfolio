@@ -119,7 +119,7 @@ const Header = () => {
             className="w-8 h-8 md:w-10 md:h-10"
           />
           <h1 className="text-[22px] md:text-[30px] text-white hover:tracking-wider transition-all duration-300 font-semibold">
-            Abdul.R
+            Abdul.Rahim
           </h1>
         </div>
 
