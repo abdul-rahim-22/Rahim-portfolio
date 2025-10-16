@@ -210,9 +210,8 @@ const Header = () => {
 
             {/* Hire Me Button */}
             <a
-              className="bg-white text-black px-6 py-3 rounded-[15px] hover:tracking-wider transition-all duration-300 text-[30px]"
+              className="bg-white text-black  rounded-[15px] hover:tracking-wider transition-all duration-300 text-[30px]"
               href="https://wa.me/03164949427"
-              target="_blank"
               rel="noreferrer"
             >
               Hire Me
