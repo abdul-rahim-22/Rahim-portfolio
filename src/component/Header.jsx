@@ -175,7 +175,7 @@ const Header = () => {
             {/* Close Button inside Menu */}
             <button
               onClick={() => setMenuOpen(false)}
-              className="absolute top-6 right-6 text-[30px] font-bold"
+              className="absolute top-6 right-6 text-[30px] font-bold  text-white"
             >
               ✖
             </button>
@@ -183,19 +183,19 @@ const Header = () => {
             {/* Menu Links */}
             <h4
               onClick={() => setMenuOpen(false)}
-              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[30px]"
+              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[35px]"
             >
               Home
             </h4>
             <h4
               onClick={() => setMenuOpen(false)}
-              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[30px]"
+              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[35px]"
             >
               About
             </h4>
             <h4
               onClick={() => setMenuOpen(false)}
-              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[30px]"
+              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[35px]"
             >
               Work
             </h4>
@@ -210,7 +210,7 @@ const Header = () => {
 
             {/* Hire Me Button */}
             <a
-              className="bg-white text-black  rounded-[15px]  text-[30px] pl-[10px] pr-[10px]"
+              className="bg-white text-black  rounded-[15px]  text-[35px] pl-[10px] pr-[10px]"
               href="https://wa.me/03164949427"
               rel="noreferrer"
             >
