@@ -183,25 +183,25 @@ const Header = () => {
             {/* Menu Links */}
             <h4
               onClick={() => setMenuOpen(false)}
-              className="cursor-pointer hover:tracking-wider transition-all duration-300"
+              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[50px]"
             >
               Home
             </h4>
             <h4
               onClick={() => setMenuOpen(false)}
-              className="cursor-pointer hover:tracking-wider transition-all duration-300"
+              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[50px]"
             >
               About
             </h4>
             <h4
               onClick={() => setMenuOpen(false)}
-              className="cursor-pointer hover:tracking-wider transition-all duration-300"
+              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[50px]"
             >
               Work
             </h4>
             <h4
               onClick={() => setMenuOpen(false)}
-              className="cursor-pointer hover:tracking-wider transition-all duration-300"
+              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[50px]"
             >
               Contact
             </h4>
@@ -210,7 +210,7 @@ const Header = () => {
 
             {/* Hire Me Button */}
             <a
-              className="bg-white text-black px-6 py-3 rounded-[15px] hover:tracking-wider transition-all duration-300 text-[20px]"
+              className="bg-white text-black px-6 py-3 rounded-[15px] hover:tracking-wider transition-all duration-300 text-[50px]"
               href="https://wa.me/03164949427"
               target="_blank"
               rel="noreferrer"
