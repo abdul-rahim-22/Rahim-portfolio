@@ -166,7 +166,7 @@ const Header = () => {
 
           {/* Mobile Fullscreen Menu */}
           <div
-            className={`fixed top-0 left-0 w-full h-screen bg-black text-white flex flex-col justify-center items-left gap-8 text-[22px] transition-all duration-500 ${
+            className={`fixed top-0 left-0 w-full h-screen bg-black text-white flex flex-col pl-[10px] pr-[10px] justify-left items-center gap-8 text-[22px] transition-all duration-500 ${
               menuOpen
                 ? "opacity-100 visible translate-y-0"
                 : "opacity-0 invisible -translate-y-10"
@@ -210,7 +210,7 @@ const Header = () => {
 
             {/* Hire Me Button */}
             <a
-              className="bg-white text-black  rounded-[15px] hover:tracking-wider transition-all duration-300 text-[30px]"
+              className="bg-white text-black  rounded-[15px]  text-[30px]"
               href="https://wa.me/03164949427"
               rel="noreferrer"
             >
