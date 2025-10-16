@@ -159,7 +159,7 @@ const Header = () => {
           {/* Hamburger Icon */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="text-black text-[40px] bg-white"
+            className="text-black text-[30px] mt-[-10px]"
           >
             {menuOpen ? "✖" : "☰"}
           </button>
