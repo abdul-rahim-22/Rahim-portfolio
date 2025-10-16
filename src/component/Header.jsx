@@ -210,7 +210,7 @@ const Header = () => {
 
             {/* Hire Me Button */}
             <a
-              className="bg-white text-black  rounded-[15px]  text-[30px]"
+              className="bg-white text-black  rounded-[15px]  text-[30px] pl-[10px] pr-[10px]"
               href="https://wa.me/03164949427"
               rel="noreferrer"
             >
