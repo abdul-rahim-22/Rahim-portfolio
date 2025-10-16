@@ -149,7 +149,7 @@ const Header = () => {
         {/* =============== MOBILE HEADER =============== */}
         <div
           id="mobileHeader"
-          className="flex md:hidden w-full justify-between items-center bg-black px-5 py-3 rounded-[15px]"
+          className="flex md:hidden w-full justify-between items-center bg-black px-5 py-3 rounded-[25px]"
         >
           {/* Logo */}
           <div className="flex items-center gap-2 text-white text-[22px] font-semibold">
@@ -183,25 +183,25 @@ const Header = () => {
             {/* Menu Links */}
             <h4
               onClick={() => setMenuOpen(false)}
-              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[50px]"
+              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[30px]"
             >
               Home
             </h4>
             <h4
               onClick={() => setMenuOpen(false)}
-              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[50px]"
+              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[30px]"
             >
               About
             </h4>
             <h4
               onClick={() => setMenuOpen(false)}
-              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[50px]"
+              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[30px]"
             >
               Work
             </h4>
             <h4
               onClick={() => setMenuOpen(false)}
-              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[50px]"
+              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[30px]"
             >
               Contact
             </h4>
@@ -210,7 +210,7 @@ const Header = () => {
 
             {/* Hire Me Button */}
             <a
-              className="bg-white text-black px-6 py-3 rounded-[15px] hover:tracking-wider transition-all duration-300 text-[50px]"
+              className="bg-white text-black px-6 py-3 rounded-[15px] hover:tracking-wider transition-all duration-300 text-[30px]"
               href="https://wa.me/03164949427"
               target="_blank"
               rel="noreferrer"
