@@ -152,14 +152,14 @@ const Header = () => {
           className="flex md:hidden w-full justify-between items-center bg-black px-5 py-3 rounded-[25px]"
         >
           {/* Logo */}
-          <div className="flex items-center gap-2 text-white text-[22px] font-semibold">
+          <div className="flex items-center gap-2 text-white text-[30px] font-semibold">
             Abdul.R
           </div>
 
           {/* Hamburger Icon */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="text-black text-[30px] mt-[-10px]"
+            className="text-white text-[30px] mt-[-10px]"
           >
             {menuOpen ? "✖" : "☰"}
           </button>
