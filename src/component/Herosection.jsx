@@ -52,7 +52,7 @@ function Herosection() {
       <div className="flex flex-col items-center justify-center text-center bg-[#FEFDF8] pt-10 pb-10">
         <div className="max-w-[1000px]">
           {/* Heading */}
-          <h1 className="fontforever  sm:text-[60px] md:text-[80px] lg:text-[60px] leading-tight font-semibold opacity-100 ">
+          <h1 className=" sm:text-[80px] md:text-[80px] lg:text-[60px] leading-tight font-semibold opacity-100 ">
             Building creative and impactful
             web solutions for <span className='text-[#8e827c]'>the modern world.</span>
           </h1>
