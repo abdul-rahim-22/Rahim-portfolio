@@ -114,13 +114,7 @@ const Header = () => {
           text-sm md:text-lg font-medium py-2 bg-[#000000] rounded-[25px]
           border  px-5 md:px-10"
         >
-          {/* Logo */}
           <h1 className="text-[22px] md:text-[30px] text-white hover:tracking-wider transition-all duration-300 name-btn flex items-center gap-2">
-            <img
-              src="src/assets/Untitled design (2).png"
-              alt="Logo"
-              className="w-[35px] h-[35px]"
-            />
             Abdul.R
           </h1>
 
@@ -159,11 +153,6 @@ const Header = () => {
         >
           {/* Logo */}
           <div className="flex items-center gap-2 text-white text-[22px] font-semibold">
-            <img
-              src="src/assets/Untitled design (2).png"
-              alt="Logo"
-              className="w-[30px] h-[30px]"
-            />
             Abdul.R
           </div>
 
