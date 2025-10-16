@@ -152,7 +152,7 @@ const Header = () => {
           className="flex md:hidden w-full justify-between items-center bg-black px-5 py-3 rounded-[25px]"
         >
           {/* Logo */}
-          <div className="flex items-center gap-2 text-white text-[30px] font-semibold">
+          <div className="flex items-center gap-2 text-white text-[40px] font-semibold">
             Abdul.R
           </div>
 
@@ -183,25 +183,25 @@ const Header = () => {
             {/* Menu Links */}
             <h4
               onClick={() => setMenuOpen(false)}
-              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[35px]"
+              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[40px]"
             >
               Home
             </h4>
             <h4
               onClick={() => setMenuOpen(false)}
-              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[35px]"
+              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[40px]"
             >
               About
             </h4>
             <h4
               onClick={() => setMenuOpen(false)}
-              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[35px]"
+              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[40px]"
             >
               Work
             </h4>
             <h4
               onClick={() => setMenuOpen(false)}
-              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[30px]"
+              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[40px]"
             >
               Contact
             </h4>
@@ -210,7 +210,7 @@ const Header = () => {
 
             {/* Hire Me Button */}
             <a
-              className="bg-white text-black  rounded-[15px]  text-[35px] pl-[10px] pr-[10px]"
+              className="bg-white text-black  rounded-[15px]  text-[40px] pl-[10px] pr-[10px]"
               href="https://wa.me/03164949427"
               rel="noreferrer"
             >
