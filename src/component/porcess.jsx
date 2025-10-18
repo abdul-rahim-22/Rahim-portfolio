@@ -8,7 +8,7 @@ function Porcess() {
                 ⚙️ Process <span className='text-[#8e827c] '>/ Workflow</span>
             </h1>
             {/* <img src={Arrowimag} className='w-15 h-15'></img> */}
-            <p className="text-[20px] md:text-[24px] leading-relaxed text-gray-700 w-[400px] ">
+            <p className="text-[20px] md:text-[24px] leading-relaxed text-gray-700 w-[600px] ">
                 My work process is simple but structured — built to deliver quality, clarity, and results. From understanding your goals to launching a fast, user-friendly website, every step is handled with clear communication and attention to detail.
             </p>
             {/* <!-- Repeatable Section --> */}
