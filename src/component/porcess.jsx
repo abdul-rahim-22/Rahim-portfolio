@@ -3,73 +3,93 @@ import React from 'react'
 
 function Porcess() {
     return (
-       <div className="px-6 md:px-10 py-10 bg-white">
-  {/* ========== HEADING ========== */}
-  <h1 className="text-[45px] md:text-[90px] font-extrabold leading-tight">
-    ⚙️ Process <span className="text-[#8e827c]">/ Workflow</span>
-  </h1>
+        <div className='flex  flex-col justify-center items-center'>
+            <h1 className='text-[90px] font-extrabold'>
+                ⚙️ Process <span className='text-[#8e827c] '>/ Workflow</span>
+            </h1>
+            {/* <img src={Arrowimag} className='w-15 h-15'></img> */}
+            <p className="text-[20px] md:text-[24px] leading-relaxed text-gray-700 w-[600px] pb-[]">
+                My work process is simple but structured — built to deliver quality, clarity, and results. From understanding your goals to launching a fast, user-friendly website, every step is handled with clear communication and attention to detail.
+            </p>
+            <h2 className="text-3xl md:text-4xl font-semibold text-gray-800 mb-6">
+          {"{ My Working Steps }"}
+          
+        </h2>
+            {/* <!-- Process Section --> */}
+<div className="text-black font-sans flex flex-col items-center py-10 space-y-6">
 
-  {/* ========== DESCRIPTION ========== */}
-  <p className="text-[18px] md:text-[24px] leading-relaxed text-gray-700 w-full md:w-[600px] mt-4">
-    My work process is simple but structured — built to deliver quality, clarity, and results. 
-    From understanding your goals to launching a fast, user-friendly website, every step is handled 
-    with clear communication and attention to detail.
-  </p>
-
-  {/* ========== SUBTITLE ========== */}
-  <h2 className="text-2xl md:text-4xl font-semibold text-gray-800 mb-6 pt-10">
-    {"{ My Working Steps }"}
-  </h2>
-
-  {/* ========== WORKFLOW GRID ========== */}
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-    {/* STEP 1 */}
-    <div className="bg-gray-100 rounded-2xl p-6 flex flex-col items-center justify-center text-center shadow-md">
-      <div className="text-[40px] font-bold text-[#8e827c] mb-2">1</div>
-      <h3 className="text-xl font-semibold mb-2">Research & Strategy</h3>
-      <p className="text-gray-600 text-[16px]">
-        Understand client needs, goals, and audience to build a strong foundation.
-      </p>
-    </div>
-
-    {/* STEP 2 */}
-    <div className="bg-gray-100 rounded-2xl p-6 flex flex-col items-center justify-center text-center shadow-md">
-      <div className="text-[40px] font-bold text-[#8e827c] mb-2">2</div>
-      <h3 className="text-xl font-semibold mb-2">Design Phase</h3>
-      <p className="text-gray-600 text-[16px]">
-        Create clean, modern, and responsive layouts aligned with your brand identity.
-      </p>
-    </div>
-
-    {/* STEP 3 */}
-    <div className="bg-gray-100 rounded-2xl p-6 flex flex-col items-center justify-center text-center shadow-md">
-      <div className="text-[40px] font-bold text-[#8e827c] mb-2">3</div>
-      <h3 className="text-xl font-semibold mb-2">Development</h3>
-      <p className="text-gray-600 text-[16px]">
-        Build fully functional websites with optimized performance and smooth interactivity.
-      </p>
-    </div>
-
-    {/* STEP 4 */}
-    <div className="bg-gray-100 rounded-2xl p-6 flex flex-col items-center justify-center text-center shadow-md md:col-span-2">
-      <div className="text-[40px] font-bold text-[#8e827c] mb-2">4</div>
-      <h3 className="text-xl font-semibold mb-2">Testing & Feedback</h3>
-      <p className="text-gray-600 text-[16px]">
-        Test across all devices and browsers; make adjustments based on client feedback.
-      </p>
-    </div>
-
-    {/* STEP 5 */}
-    <div className="bg-gray-100 rounded-2xl p-6 flex flex-col items-center justify-center text-center shadow-md">
-      <div className="text-[40px] font-bold text-[#8e827c] mb-2">5</div>
-      <h3 className="text-xl font-semibold mb-2">Launch & Support</h3>
-      <p className="text-gray-600 text-[16px]">
-        Launch the project and provide ongoing updates and maintenance if needed.
+  {/* 01 */}
+  <div className="w-[90%] max-w-[1200px] border-2 border-black rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-start gap-6 transition-transform duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,0,0,0.2)]">
+    <h2 className="text-[60px] sm:text-[80px] md:text-[90px] italic font-serif leading-none md:w-1/4 text-center md:text-left">01</h2>
+    <div className="md:w-3/4 space-y-3 text-left">
+      <h3 className="text-2xl sm:text-3xl font-bold">🧠 Research & Planning</h3>
+      <p className="text-base sm:text-lg leading-relaxed text-black">
+        Every great website starts with understanding your goals, target audience, and brand identity.
+        I analyze your requirements, competitors, and user needs to create a clear project plan before touching the design.
       </p>
     </div>
   </div>
+
+  {/* 02 */}
+  <div className="w-[90%] max-w-[1200px] border-2 border-black rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-start gap-6 transition-transform duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,0,0,0.2)]">
+    <h2 className="text-[60px] sm:text-[80px] md:text-[90px] italic font-serif leading-none md:w-1/4 text-center md:text-left">02</h2>
+    <div className="md:w-3/4 space-y-3 text-left">
+      <h3 className="text-2xl sm:text-3xl font-bold">🎨 Design & Prototype</h3>
+      <p className="text-base sm:text-lg leading-relaxed text-black">
+        Using clean layouts and smart UX principles, I create a visual prototype that shows exactly how your website will look and feel — modern, responsive, and brand-aligned.
+      </p>
+    </div>
+  </div>
+
+  {/* 03 */}
+  <div className="w-[90%] max-w-[1200px] border-2 border-black rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-start gap-6 transition-transform duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,0,0,0.2)]">
+    <h2 className="text-[60px] sm:text-[80px] md:text-[90px] italic font-serif leading-none md:w-1/4 text-center md:text-left">03</h2>
+    <div className="md:w-3/4 space-y-3 text-left">
+      <h3 className="text-2xl sm:text-3xl font-bold">💻 Development</h3>
+      <p className="text-base sm:text-lg leading-relaxed text-black">
+        Once the design is approved, I turn it into a fully functional website using WordPress, Elementor, or custom code.
+        Every line of code is clean, secure, and optimized for performance.
+      </p>
+    </div>
+  </div>
+
+  {/* 04 */}
+  <div className="w-[90%] max-w-[1200px] border-2 border-black rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-start gap-6 transition-transform duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,0,0,0.2)]">
+    <h2 className="text-[60px] sm:text-[80px] md:text-[90px] italic font-serif leading-none md:w-1/4 text-center md:text-left">04</h2>
+    <div className="md:w-3/4 space-y-3 text-left">
+      <h3 className="text-2xl sm:text-3xl font-bold">🔍 Testing & Quality Assurance</h3>
+      <p className="text-base sm:text-lg leading-relaxed text-black">
+        Before launch, I test everything — responsiveness, speed, SEO, and browser compatibility — to ensure your website works perfectly on all devices.
+      </p>
+    </div>
+  </div>
+
+  {/* 05 */}
+  <div className="w-[90%] max-w-[1200px] border-2 border-black rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-start gap-6 transition-transform duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,0,0,0.2)]">
+    <h2 className="text-[60px] sm:text-[80px] md:text-[90px] italic font-serif leading-none md:w-1/4 text-center md:text-left">05</h2>
+    <div className="md:w-3/4 space-y-3 text-left">
+      <h3 className="text-2xl sm:text-3xl font-bold">🚀 Launch & Optimization</h3>
+      <p className="text-base sm:text-lg leading-relaxed text-black">
+        After your final approval, the website goes live. I monitor its performance, apply speed optimizations, and make sure everything runs smoothly from day one.
+      </p>
+    </div>
+  </div>
+
+  {/* 06 */}
+  <div className="w-[90%] max-w-[1200px] border-2 border-black rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-start gap-6 transition-transform duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,0,0,0.2)]">
+    <h2 className="text-[60px] sm:text-[80px] md:text-[90px] italic font-serif leading-none md:w-1/4 text-center md:text-left">06</h2>
+    <div className="md:w-3/4 space-y-3 text-left">
+      <h3 className="text-2xl sm:text-3xl font-bold">🔧 Maintenance & Support</h3>
+      <p className="text-base sm:text-lg leading-relaxed text-black">
+        I don’t just disappear after launch.
+        I offer ongoing updates, fixes, and technical support to keep your website secure, fast, and up-to-date.
+      </p>
+    </div>
+  </div>
+
 </div>
 
+        </div>
     )
 }
 
