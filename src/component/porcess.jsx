@@ -12,7 +12,7 @@ function Porcess() {
                 We create innovative and purposeful designs that not only capture attention but also drive meaningful results.
             </p>
              {/* <!-- Repeatable Section --> */}
-<div className=' bg-black text-white font-sans flex flex-col items-center min-h-screen py-10 space-y-6'>
+<div className=  ' text-black font-sans flex flex-col items-center min-h-screen py-10 space-y-6'>
     <div class="w-[90%] max-w-[1200px] border-2 border-white rounded-3xl p-10 flex flex-col md:flex-row items-start md:items-center gap-6 transition-transform duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(255,255,255,0.2)]">
       <h2 class="text-[90px] italic font-serif leading-none md:w-1/4">01</h2>
       <div class="md:w-3/4 space-y-3">
