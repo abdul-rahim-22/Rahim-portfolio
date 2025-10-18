@@ -12,6 +12,7 @@ import LocalTimeWithCountry from './component/localtime.jsx'
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import SplashCursor from './component/cursor.jsx'
 import Footer from './component/footer.jsx'
+import Processs from './component/porcess.jsx'
 
 
 
@@ -27,6 +28,7 @@ createRoot(document.getElementById('root')).render(
   <TextInfiniteCarousel/>
   <Portfolio2/>
   <Portfolio/>
+  <Processs/>
   <Footer/>
   </>
  
