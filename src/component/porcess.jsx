@@ -12,8 +12,8 @@ function Porcess() {
                 We create innovative and purposeful designs that not only capture attention but also drive meaningful results.
             </p>
             {/* <!-- Repeatable Section --> */}
-            <div className=' text-black font-sans flex flex-col items-left min-h-screen py-10 space-y-6'>
-                <div class="w-[90%] max-w-[1200px] border-2 border-black rounded-3xl p-10 flex flex-col md:flex-row items-start md:items-center gap-6 transition-transform duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(255,255,255,0.2)]">
+            <div className=' text-black font-sans flex flex-col items-center min-h-screen py-10 space-y-6'>
+                <div class="w-[90%] max-w-[1200px] border-2 border-white rounded-3xl p-10 flex flex-col md:flex-row items-start md:items-start gap-6 ...">
                     <h2 class="text-[90px] italic font-serif leading-none md:w-1/4">01</h2>
                     <div class="md:w-3/4 space-y-3">
                         <h3 class="text-3xl font-bold">🧠 Research & Planning</h3>
@@ -25,7 +25,7 @@ function Porcess() {
                 </div>
 
 
-                <div class="w-[90%] max-w-[1200px] border-2 border-black  rounded-3xl p-10 flex flex-col md:flex-row items-start md:items-center gap-6 hover:scale-[1.02] transition-all duration-300">
+                <div class="w-[90%] max-w-[1200px] border-2 border-white rounded-3xl p-10 flex flex-col md:flex-row items-start md:items-start gap-6 ...">
                     <h2 class="text-[90px] italic font-serif leading-none md:w-1/4">02</h2>
                     <div class="md:w-3/4 space-y-3">
                         <h3 class="text-3xl font-bold">🎨 Design & Prototype</h3>
@@ -36,7 +36,7 @@ function Porcess() {
                 </div>
 
 
-                <div class="w-[90%] max-w-[1200px] border-2 border-black  rounded-3xl p-10 flex flex-col md:flex-row items-start md:items-center gap-6 hover:scale-[1.02] transition-all duration-300">
+                <div class="w-[90%] max-w-[1200px] border-2 border-white rounded-3xl p-10 flex flex-col md:flex-row items-start md:items-start gap-6 ...">
                     <h2 class="text-[90px] italic font-serif leading-none md:w-1/4">03</h2>
                     <div class="md:w-3/4 space-y-3">
                         <h3 class="text-3xl font-bold">💻 Development</h3>
@@ -48,7 +48,7 @@ function Porcess() {
                 </div>
 
 
-                <div class="w-[90%] max-w-[1200px] border-2 border-black  rounded-3xl p-10 flex flex-col md:flex-row items-start md:items-center gap-6 hover:scale-[1.02] transition-all duration-300">
+                <div class="w-[90%] max-w-[1200px] border-2 border-white rounded-3xl p-10 flex flex-col md:flex-row items-start md:items-start gap-6 ...">
                     <h2 class="text-[90px] italic font-serif leading-none md:w-1/4">04</h2>
                     <div class="md:w-3/4 space-y-3">
                         <h3 class="text-3xl font-bold">🔍 Testing & Quality Assurance</h3>
@@ -59,7 +59,7 @@ function Porcess() {
                 </div>
 
 
-                <div class="w-[90%] max-w-[1200px] border-2 border-black  rounded-3xl p-10 flex flex-col md:flex-row items-start md:items-center gap-6 hover:scale-[1.02] transition-all duration-300">
+              <div class="w-[90%] max-w-[1200px] border-2 border-white rounded-3xl p-10 flex flex-col md:flex-row items-start md:items-start gap-6 ...">
                     <h2 class="text-[90px] italic font-serif leading-none md:w-1/4">05</h2>
                     <div class="md:w-3/4 space-y-3">
                         <h3 class="text-3xl font-bold">🚀 Launch & Optimization</h3>
@@ -68,7 +68,7 @@ function Porcess() {
                         </p>
                     </div>
                 </div>
-                <div class="w-[90%] max-w-[1200px] border-2 border-black  rounded-3xl p-10 flex flex-col md:flex-row items-start md:items-center gap-6 hover:scale-[1.02] transition-all duration-300">
+              <div class="w-[90%] max-w-[1200px] border-2 border-white rounded-3xl p-10 flex flex-col md:flex-row items-start md:items-start gap-6 ...">
                     <h2 class="text-[90px] italic font-serif leading-none md:w-1/4">06</h2>
                     <div class="md:w-3/4 space-y-3">
                         <h3 class="text-3xl font-bold">🔧  Maintenance & Support</h3>
