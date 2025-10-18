@@ -4,20 +4,20 @@ import React from 'react'
 function Porcess() {
     return (
         <div className='flex  flex-col justify-center items-center'>
-           <div className="text-center md:text-center flex flex-col items-center md:items-start px-5 md:px-20 py-10 space-y-6">
-
-  <h1 className="text-[45px] sm:text-[60px] md:text-[90px] font-extrabold leading-tight">
+            <div className="px-6 md:px-0 text-center md:text-left">
+  <h1 className="text-[40px] md:text-[90px] font-extrabold leading-tight">
     ⚙️ Process <span className="text-[#8e827c]">/ Workflow</span>
   </h1>
 
-  {/* Description */}
-  <p className="text-[16px] sm:text-[18px] md:text-[20px] leading-relaxed text-gray-700 max-w-[600px]">
-    My work process is simple but structured — built to deliver quality, clarity, and results.
-    From understanding your goals to launching a fast, user-friendly website,
+  {/* <img src={Arrowimag} className='w-15 h-15'></img> */}
+
+  <p className="text-[16px] md:text-[24px] leading-relaxed text-gray-700 max-w-[600px] mx-auto md:mx-0 mt-4">
+    My work process is simple but structured — built to deliver quality, clarity, and results. 
+    From understanding your goals to launching a fast, user-friendly website, 
     every step is handled with clear communication and attention to detail.
   </p>
 
-  <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-800 pt-6">
+  <h2 className="text-2xl md:text-4xl font-semibold text-gray-800 mb-6 pt-10">
     {"{ My Working Steps }"}
   </h2>
 </div>
