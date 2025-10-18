@@ -9,7 +9,7 @@ function Porcess() {
             </h1>
             {/* <img src={Arrowimag} className='w-15 h-15'></img> */}
             <p className="text-[20px] md:text-[24px] leading-relaxed text-gray-700 w-[400px] ">
-                We create innovative and purposeful designs that not only capture attention but also drive meaningful results.
+                My work process is simple but structured — built to deliver quality, clarity, and results. From understanding your goals to launching a fast, user-friendly website, every step is handled with clear communication and attention to detail.
             </p>
             {/* <!-- Repeatable Section --> */}
             <div className=' text-black font-sans flex flex-col items-center min-h-screen py-10 space-y-6'>
