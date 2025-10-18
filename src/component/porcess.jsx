@@ -4,7 +4,7 @@ import React from 'react'
 function Porcess() {
     return (
         <div className='flex  flex-col justify-center items-center'>
-           <div className="text-center md:text-left flex flex-col items-center md:items-start px-5 md:px-20 py-10 space-y-6">
+           <div className="text-center md:text-center flex flex-col items-center md:items-start px-5 md:px-20 py-10 space-y-6">
 
   <h1 className="text-[45px] sm:text-[60px] md:text-[90px] font-extrabold leading-tight">
     ⚙️ Process <span className="text-[#8e827c]">/ Workflow</span>
