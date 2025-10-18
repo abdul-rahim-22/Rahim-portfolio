@@ -7,7 +7,7 @@ function Footer() {
             c© 2025 Abdul Rahim. All Rights Reserved.
         </h1>
          <h1 className='text-white'>
-            Privacy Policy | Terms of Membership | Follow us on LinkedIn | Instagram | X (Twitter)
+             Follow us on LinkedIn | Instagram | 
         </h1>
     </div>
   )
