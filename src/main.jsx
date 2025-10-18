@@ -11,7 +11,7 @@ import Portfolio2 from './component/portfolio2.jsx'
 import LocalTimeWithCountry from './component/localtime.jsx'
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import SplashCursor from './component/cursor.jsx'
-
+import Herosectiongrid from './component/herosectiongrid.jsx'
 
 
 
@@ -26,6 +26,7 @@ createRoot(document.getElementById('root')).render(
   <TextInfiniteCarousel/>
   <Portfolio2/>
   <Portfolio/>
+  <Herosectiongrid/>
   </>
  
 ) 
