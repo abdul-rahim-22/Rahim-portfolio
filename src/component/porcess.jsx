@@ -11,6 +11,10 @@ function Porcess() {
             <p className="text-[20px] md:text-[24px] leading-relaxed text-gray-700 w-[600px] ">
                 My work process is simple but structured — built to deliver quality, clarity, and results. From understanding your goals to launching a fast, user-friendly website, every step is handled with clear communication and attention to detail.
             </p>
+            <h2 className="text-3xl md:text-4xl font-semibold text-gray-800 mb-6">
+          {"{ My Working Steps }"}
+          
+        </h2>
             {/* <!-- Process Section --> */}
 <div className="text-black font-sans flex flex-col items-center py-10 space-y-6">
 
