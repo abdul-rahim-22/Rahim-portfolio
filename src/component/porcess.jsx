@@ -119,29 +119,30 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 gsap.registerPlugin(ScrollTrigger);
 
 function Process() {
-   useGSAP(() => {
+  useGSAP(() => {
     // Pin the entire process section
     ScrollTrigger.create({
       trigger: ".process-section",
       start: "top top",
-      end: "+=4000",
+      end: "+=4000", // adjust scroll distance for how long it stays pinned
       pin: true,
-      scrub: 1, // keeps scroll synced smoothly
+      scrub: true,
     });
 
-    // Animate each box with smooth scaling
-    gsap.utils.toArray(".processnum1").forEach((box) => {
+    // Animate each box inside the pinned section
+    gsap.utils.toArray(".processnum1").forEach((box, i) => {
       gsap.fromTo(
         box,
         { scale: 0.7, opacity: 0.4 },
         {
           scale: 1,
           opacity: 1,
+          // ease: "power2.out",
           scrollTrigger: {
             trigger: box,
-            start: "top 85%",
+            start: "top 80%",
             end: "top 30%",
-            scrub: 1, // smooth scrub motion
+            scrub: true,
           },
         }
       );
@@ -158,14 +159,14 @@ function Process() {
         className="w-14 h-14 mb-4"
         alt="Process Icon"
       />
-      <p className="text-[18px] md:text-[22px] leading-relaxed text-gray-700 max-w-[900px] text-center">
+      <p className=" process-section text-[18px] md:text-[22px] leading-relaxed text-gray-700 max-w-[900px] text-center">
         My work process is simple but structured — built to deliver quality,
         clarity, and results. From understanding your goals to launching a fast,
         user-friendly website, every step is handled with clear communication
         and attention to detail.
       </p>
 
-      <h2 className=" process-section text-3xl md:text-4xl font-semibold text-gray-800 mb-8 pt-10 text-center">
+      <h2 className="  text-3xl md:text-4xl font-semibold text-gray-800 mb-8 pt-10 text-center">
         {"{ My Working Steps }"}
       </h2>
 
