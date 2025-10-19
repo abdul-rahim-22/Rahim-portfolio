@@ -26,7 +26,13 @@ body{
   font-style: normal;
   background-color: #FEFDF8;
 }
-
+@media (max-width: 767px) {
+  html, body {
+    overflow-x: hidden;
+    height: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}
 
 
 .client-slider-container {
