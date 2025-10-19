@@ -8,11 +8,9 @@ gsap.registerPlugin(ScrollTrigger);
 
 function Porcess() {
 useGSAP(() => {
-  gsap.to(".processnum1", {
-    transform: scale(1),        // example animation property
-    duration: 5,   // duration in seconds
-  });
+  gsap.to(".processnum1", { scale: 1, duration: 5 });
 });
+
 
     return (
         <div className='flex  flex-col justify-center items-center'>
