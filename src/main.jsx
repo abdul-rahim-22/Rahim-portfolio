@@ -13,14 +13,12 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import SplashCursor from './component/cursor.jsx'
 import Footer from './component/footer.jsx'
 import Processs from './component/porcess.jsx'
-import Snowfall from "./component/Snowfall.jsx";
 
 
 
 
 createRoot(document.getElementById('root')).render(
   <>
-  <Snowfall/>
   <SplashCursor />
   <SpeedInsights />
   <Header/>
