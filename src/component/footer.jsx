@@ -1,5 +1,5 @@
 import React from 'react'
-import LocalTimeWithCountry from './component/localtime.jsx'
+import LocalTime from './component/localtime.jsx'
 
 function Footer() {
   return (
