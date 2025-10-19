@@ -14,7 +14,6 @@ useGSAP(() => {
         trigger: box,
         start: "top 80%",
         scrub: true,
-        pin:true,
       },
     });
   });
