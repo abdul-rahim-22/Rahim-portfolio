@@ -49,25 +49,26 @@ function Herosection() {
 
   return (
     <section>
-      <div className="flex flex-col items-center justify-center text-center bg-[#FEFDF8] pt-10 pb-10">
+      <div className="flex flex-col items-center justify-center text-center sm:text-left bg-[#FEFDF8] pt-10 pb-10">
         <div className="max-w-[1000px]">
-          {/* Heading */}
-          <h1 className=" sm:text-[80px] md:text-[80px] lg:text-[60px] leading-tight font-semibold opacity-100 ">
-            Building creative and impactful
-            web solutions for <span className='text-[#8e827c]'>the modern world.</span>
-          </h1>
+         {/* ====== HEADING ====== */}
+  <h1 className="text-[32px] sm:text-[48px] md:text-[60px] lg:text-[70px] xl:text-[80px] leading-tight font-semibold text-black opacity-100 max-w-[1000px]">
+    Building creative and impactful
+    <br className="hidden sm:block" />
+    web solutions for{" "}
+    <span className="text-[#8e827c]">the modern world.</span>
+  </h1>
 
-          {/* Paragraph */}
-          <p className="text-[16px] sm:text-[18px] md:text-[20px] text-[#333] pt-6 pb-6">
-            I build digital experiences that combine creativity, technology, and
-            purpose to make every website stand out.
-          </p>
+  {/* ====== PARAGRAPH ====== */}
+  <p className="text-[15px] sm:text-[17px] md:text-[18px] lg:text-[20px] text-[#333] pt-6 pb-8 max-w-[800px]">
+    I build digital experiences that combine creativity, technology, and
+    purpose to make every website stand out.
+  </p>
 
-          {/* Button */}
-          <button className="bg-[#24CDD7] text-black text-[16px] sm:text-[18px] px-6 py-3 rounded-[15px] hover:tracking-wider hover:text-white hover:bg-black transition-all duration-300">
-            Download Me →
-          </button>
-
+  {/* ====== BUTTON ====== */}
+  <button className="bg-[#24CDD7] text-black text-[15px] sm:text-[17px] md:text-[18px] px-6 sm:px-8 py-3 rounded-[15px] hover:tracking-wider hover:text-white hover:bg-black transition-all duration-300">
+    Download Me →
+  </button>
           {/* Note */}
           <p className="text-[#888888] text-sm mt-3">Yes, that’s my resume</p>
         </div>
