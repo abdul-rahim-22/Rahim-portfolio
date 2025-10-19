@@ -14,7 +14,7 @@
 
 .snowflake {
   position: absolute;
-  background-color: white;
+  background-color: black;
   border-radius: 50%;
   opacity: 0.8;
   pointer-events: none;
