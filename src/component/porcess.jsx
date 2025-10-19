@@ -9,7 +9,7 @@ function Porcess() {
 useGSAP(() => {
   gsap.utils.toArray(".processnum1").forEach((box) => {
     gsap.to(box, { 
-      scale: 3,
+      scale: 2,
       scrollTrigger: { 
         trigger: box,
         start: "top 80%",
