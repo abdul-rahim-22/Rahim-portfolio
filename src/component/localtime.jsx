@@ -50,7 +50,7 @@ function LocalTimeWithCountry() {
       {countryName ? (
         <div className="flex items-center gap-2 text-lg text-white">
           <img src={flag} alt={countryName} className="w-6 h-5 rounded-sm" />
-          <span>localTime -{countryName}</span>
+          <span>localTime — {countryName}</span>
           <span>— {time}</span>
         </div>
       ) : (
