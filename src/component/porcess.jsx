@@ -12,7 +12,7 @@ useGSAP(() => {
     duration: 5,
     scrollTrigger: {   
       trigger: ".processnum1",
-      start: "top top",
+      start: "top 80%",
       scrub:true,  
     },
   });
