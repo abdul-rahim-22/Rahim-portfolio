@@ -10,8 +10,7 @@ function Porcess() {
 useGSAP(() => {
   gsap.to(".processnum1", {
     transform: scale(1),        // example animation property
-    duration: 1,   // duration in seconds
-    ease: "power1.out"
+    duration: 5,   // duration in seconds
   });
 });
 
