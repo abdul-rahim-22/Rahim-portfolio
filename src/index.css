@@ -148,7 +148,6 @@ body{
 @media (max-width: 480px) {
   .client-slider img {
     height: auto;
-    max-height: ;
     width: 100%;
     margin: 0 5px;
     border-radius: 12px;
