@@ -119,30 +119,30 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 gsap.registerPlugin(ScrollTrigger);
 
 function Process() {
-  useGSAP(() => {
+   useGSAP(() => {
     // Pin the entire process section
     ScrollTrigger.create({
       trigger: ".process-section",
       start: "top top",
-      end: "+=4000", // adjust scroll distance for how long it stays pinned
+      end: "+=4000",
       pin: true,
-      scrub: true,
+      scrub: 1, // keeps scroll synced smoothly
     });
 
-    // Animate each box inside the pinned section
-    gsap.utils.toArray(".processnum1").forEach((box, i) => {
+    // Animate each box with smooth scaling
+    gsap.utils.toArray(".processnum1").forEach((box) => {
       gsap.fromTo(
         box,
         { scale: 0.7, opacity: 0.4 },
         {
           scale: 1,
           opacity: 1,
-          ease: "power2.out",
+          ease: "power3.out", // smoother easing
           scrollTrigger: {
             trigger: box,
-            start: "top 80%",
+            start: "top 85%",
             end: "top 30%",
-            scrub: true,
+            scrub: 1.5, // smooth scrub motion
           },
         }
       );
