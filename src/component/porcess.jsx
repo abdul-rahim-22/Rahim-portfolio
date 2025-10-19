@@ -6,18 +6,18 @@ gsap.registerPlugin(ScrollTrigger);
 
 
 function Porcess() {
-useGSAP(() => {
-  gsap.utils.toArray(".processnum1").forEach((box) => {
-    gsap.to(box, { 
-      scale: 2,
-      scrollTrigger: { 
-        trigger: box,
-        start: "top 80%",
-        scrub: true,
-      },
-    });
-  });
-});
+// useGSAP(() => {
+//   gsap.utils.toArray(".processnum1").forEach((box) => {
+//     gsap.to(box, { 
+//       scale: 2,
+//       scrollTrigger: { 
+//         trigger: box,
+//         start: "top 80%",
+//         scrub: true,
+//       },
+//     });
+//   });
+// });
 
     return (
         <div className='flex  flex-col justify-center items-center'>
@@ -36,7 +36,7 @@ useGSAP(() => {
 <div className="text-black font-sans flex flex-col items-center py-10 space-y-6">
 
   {/* 01 */}
-  <div className="processnum1  scale-[0.5] w-[90%] max-w-[1200px] border-2 border-black rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-start gap-6 transition-transform duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,0,0,0.2)]">
+  <div className="processnum1  scale-[0.3] w-[90%] max-w-[1200px] border-2 border-black rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-start gap-6 transition-transform duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,0,0,0.2)]">
     <h2 className="text-[60px] sm:text-[80px] md:text-[90px] italic font-serif leading-none md:w-1/4 text-center md:text-left">01</h2>
     <div className="md:w-3/4 space-y-3 text-left">
       <h3 className="text-2xl sm:text-3xl font-bold">🧠 Research & Planning</h3>
