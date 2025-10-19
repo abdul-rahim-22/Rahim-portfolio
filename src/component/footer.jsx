@@ -1,5 +1,5 @@
 import React from 'react'
-import LocalTime from './component/localtime.jsx'
+import LocalTime from './localtime'
 
 function Footer() {
   return (
@@ -8,7 +8,7 @@ function Footer() {
     © 2025 Abdul Rahim. All Rights Reserved.
   </h1>
   <h1 className="text-white text-sm md:text-base">
-   <span><LocalTimeWithCountry/></span> Follow us on LinkedIn | Instagram |
+   <span><LocalTime/></span> Follow us on LinkedIn | Instagram |
   </h1>
 </div>
   )
