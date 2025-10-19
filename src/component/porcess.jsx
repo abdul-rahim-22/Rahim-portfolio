@@ -137,12 +137,11 @@ function Process() {
         {
           scale: 1,
           opacity: 1,
-          ease: "power3.out", // smoother easing
           scrollTrigger: {
             trigger: box,
             start: "top 85%",
             end: "top 30%",
-            scrub: 1.5, // smooth scrub motion
+            scrub: 1, // smooth scrub motion
           },
         }
       );
