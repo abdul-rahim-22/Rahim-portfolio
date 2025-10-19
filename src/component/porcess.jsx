@@ -7,17 +7,17 @@ gsap.registerPlugin(ScrollTrigger);
 
 function Porcess() {
 useGSAP(() => {
-  gsap.to(".processnum1", { 
-    scale: 1,
-    scrollTrigger: {   
-      trigger: ".processnum1",
-      start: "top 80%",
-      scrub:true,  
-    },
+  gsap.utils.toArray(".processnum1").forEach((box) => {
+    gsap.to(box, { 
+      scale: 1,
+      scrollTrigger: { 
+        trigger: box,
+        start: "top 80%",
+        scrub: true,
+      },
+    });
   });
 });
-
-
 
     return (
         <div className='flex  flex-col justify-center items-center'>
