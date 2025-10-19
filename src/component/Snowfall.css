@@ -15,7 +15,6 @@
   border-radius: 50%;
   opacity: 0.8;
   pointer-events: none;
-  filter: blur(1px);
 }
 
 @keyframes fall {
@@ -44,25 +43,4 @@
     opacity: 0.25;
     transform: translate(10vw, 100vh);
   }
-}
-
-/* New snow pile effect at bottom */
-.snow-ground {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100vw;
-  height: 100px;
-  overflow: hidden;
-  z-index: 99998;
-  pointer-events: none;
-}
-
-.ground-flake {
-  position: absolute;
-  bottom: 0;
-  height: 2px;
-  background: white;
-  border-radius: 2px;
-  filter: blur(1px);
 }
