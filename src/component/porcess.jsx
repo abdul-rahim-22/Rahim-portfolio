@@ -2,13 +2,12 @@ import React from 'react'
 import gsap from 'gsap'
 import { useGSAP } from '@gsap/react'
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { scale } from 'framer-motion';
 gsap.registerPlugin(ScrollTrigger);
 
 
 function Porcess() {
 useGSAP(() => {
-  gsap.to(".processnum1", { scale: 1, duration: 5 });
+  gsap.to(".processnum1", { scale: 0.3, duration: 5 });
 });
 
 
