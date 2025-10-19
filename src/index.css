@@ -62,12 +62,12 @@ body{
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-@media only screen and (max-width: 600px) {
+/* @media only screen and (max-width: 600px) {
   .client-slider img {
   height: 100%;
   width: 100%;
   }
-}
+} */
 
 .client-slider img:nth-child(odd) {
   transform: translateY(10%);
@@ -136,7 +136,7 @@ body{
 
 @media (max-width: 768px) {
   .client-slider img {
-    height: 180px;
+    height: 100%;
     margin: 0 10px;
   }
 
@@ -148,7 +148,6 @@ body{
 @media (max-width: 480px) {
   .client-slider img {
     height: auto;
-    max-height: 150px;
     width: 100%;
     margin: 0 5px;
     border-radius: 12px;
