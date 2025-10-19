@@ -52,7 +52,7 @@ function Herosection() {
       <div className="flex flex-col items-center justify-center lg:text-center sm:text-left bg-[#FEFDF8] pt-10 pb-10">
         <div className="max-w-[1000px]">
          {/* ====== HEADING ====== */}
-  <h1 className="text-[32px] sm:text-[48px] md:text-[60px] lg:text-[70px] xl:text-[80px] leading-tight font-semibold text-black opacity-100 max-w-[1000px]">
+  <h1 className="text-[32px] sm:text-[48px] md:text-[60px] lg:text-[50px] xl:text-[50px] leading-tight font-semibold text-black opacity-100 max-w-[1000px]">
     Building creative and impactful
     <br className="hidden sm:block" />
     web solutions for{" "}
@@ -60,7 +60,7 @@ function Herosection() {
   </h1>
 
   {/* ====== PARAGRAPH ====== */}
-  <p className="text-[15px] sm:text-[17px] md:text-[18px] lg:text-[20px] text-[#333] pt-6 pb-8 max-w-[800px]">
+  <p className="text-[15px] sm:text-[17px] md:text-[18px] lg:text-[20px] lg:text-center sm:text-left  text-[#333] pt-6 pb-8 max-w-[800px]">
     I build digital experiences that combine creativity, technology, and
     purpose to make every website stand out.
   </p>
