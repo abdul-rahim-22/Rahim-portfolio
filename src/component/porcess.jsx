@@ -49,7 +49,7 @@ useGSAP(() => {
   </div>
 
   {/* 02 */}
-  <div className="w-[90%] max-w-[1200px] border-2 border-black rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-start gap-6 transition-transform duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,0,0,0.2)]">
+  <div className="processnum1   w-[90%] max-w-[1200px] border-2 border-black rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-start gap-6 transition-transform duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,0,0,0.2)]">
     <h2 className="text-[60px] sm:text-[80px] md:text-[90px] italic font-serif leading-none md:w-1/4 text-center md:text-left">02</h2>
     <div className="md:w-3/4 space-y-3 text-left">
       <h3 className="text-2xl sm:text-3xl font-bold">🎨 Design & Prototype</h3>
@@ -60,7 +60,7 @@ useGSAP(() => {
   </div>
 
   {/* 03 */}
-  <div className="w-[90%] max-w-[1200px] border-2 border-black rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-start gap-6 transition-transform duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,0,0,0.2)]">
+  <div className=" processnum1 w-[90%] max-w-[1200px] border-2 border-black rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-start gap-6 transition-transform duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,0,0,0.2)]">
     <h2 className="text-[60px] sm:text-[80px] md:text-[90px] italic font-serif leading-none md:w-1/4 text-center md:text-left">03</h2>
     <div className="md:w-3/4 space-y-3 text-left">
       <h3 className="text-2xl sm:text-3xl font-bold">💻 Development</h3>
@@ -72,7 +72,7 @@ useGSAP(() => {
   </div>
 
   {/* 04 */}
-  <div className="w-[90%] max-w-[1200px] border-2 border-black rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-start gap-6 transition-transform duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,0,0,0.2)]">
+  <div className="processnum1 w-[90%] max-w-[1200px] border-2 border-black rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-start gap-6 transition-transform duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,0,0,0.2)]">
     <h2 className="text-[60px] sm:text-[80px] md:text-[90px] italic font-serif leading-none md:w-1/4 text-center md:text-left">04</h2>
     <div className="md:w-3/4 space-y-3 text-left">
       <h3 className="text-2xl sm:text-3xl font-bold">🔍 Testing & Quality Assurance</h3>
@@ -83,7 +83,7 @@ useGSAP(() => {
   </div>
 
   {/* 05 */}
-  <div className="w-[90%] max-w-[1200px] border-2 border-black rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-start gap-6 transition-transform duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,0,0,0.2)]">
+  <div className="processnum1 w-[90%] max-w-[1200px] border-2 border-black rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-start gap-6 transition-transform duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,0,0,0.2)]">
     <h2 className="text-[60px] sm:text-[80px] md:text-[90px] italic font-serif leading-none md:w-1/4 text-center md:text-left">05</h2>
     <div className="md:w-3/4 space-y-3 text-left">
       <h3 className="text-2xl sm:text-3xl font-bold">🚀 Launch & Optimization</h3>
@@ -94,7 +94,7 @@ useGSAP(() => {
   </div>
 
   {/* 06 */}
-  <div className="w-[90%] max-w-[1200px] border-2 border-black rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-start gap-6 transition-transform duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,0,0,0.2)]">
+  <div className="processnum1 w-[90%] max-w-[1200px] border-2 border-black rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-start gap-6 transition-transform duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,0,0,0.2)]">
     <h2 className="text-[60px] sm:text-[80px] md:text-[90px] italic font-serif leading-none md:w-1/4 text-center md:text-left">06</h2>
     <div className="md:w-3/4 space-y-3 text-left">
       <h3 className="text-2xl sm:text-3xl font-bold">🔧 Maintenance & Support</h3>
