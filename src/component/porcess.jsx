@@ -8,8 +8,7 @@ gsap.registerPlugin(ScrollTrigger);
 function Porcess() {
 useGSAP(() => {
   gsap.to(".processnum1", { 
-    scale: 1, 
-    duration: 5,
+    scale: 1,
     scrollTrigger: {   
       trigger: ".processnum1",
       start: "top 90%",
