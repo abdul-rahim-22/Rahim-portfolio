@@ -150,7 +150,7 @@ function Process() {
   });
 
   return (
-    <div className="process-section flex flex-col justify-center items-center bg-white">
+    <div className=" flex flex-col justify-center items-center bg-white">
       <h1 className="text-[70px] md:text-[90px] font-extrabold text-center">
         😃 Process <span className="text-[#8e827c]">/ Workflow</span>
       </h1>
@@ -166,7 +166,7 @@ function Process() {
         and attention to detail.
       </p>
 
-      <h2 className="text-3xl md:text-4xl font-semibold text-gray-800 mb-8 pt-10 text-center">
+      <h2 className=" process-section text-3xl md:text-4xl font-semibold text-gray-800 mb-8 pt-10 text-center">
         {"{ My Working Steps }"}
       </h2>
 
