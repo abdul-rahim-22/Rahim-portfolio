@@ -150,7 +150,7 @@ function Process() {
   });
 
   return (
-    <div className=" flex paddinfdiv flex-col justify-center items-center bg-white sm:pl-[10px] sm:pr-[10px]">
+    <div className=" flex paddinfdiv flex-col justify-center items-center bg-[#FEFDF8] sm:pl-[10px] sm:pr-[10px]">
        {/* ====== HEADING ====== */}
   <h1 className="text-[36px] sm:text-[50px] md:text-[70px] font-extrabold leading-tight">
     😃 Process <span className="text-[#8e827c]">/ Workflow</span>
