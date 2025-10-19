@@ -51,24 +51,17 @@ body{
   animation: scroll-right 25s linear infinite;
 }
 
-/* Make it look zig-zag: every odd image goes 30% down */
 .client-slider img {
   height: 400px;
   width: 400px;
   margin: 0 20px;
   border-radius: 15px;
   object-fit: cover;
-  border: 5px solid rgb(0, 0, 0)  ;
+  border: 5px solid rgb(0, 0, 0);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* @media only screen and (max-width: 600px) {
-  .client-slider img {
-  height: 100%;
-  width: 100%;
-  }
-} */
-
+/* Zig-zag pattern */
 .client-slider img:nth-child(odd) {
   transform: translateY(10%);
 }
@@ -77,15 +70,14 @@ body{
   transform: translateY(0);
 }
 
-/* Optional hover */
+/* Hover effect */
 .client-slider img:hover {
-  transform: scale(1.05) rotate(5deg);
-    transform: rotateY(15deg) translateY(5px);
+  transform: scale(1.05) rotateY(10deg) translateY(5px);
   transition: transform 0.5s ease;
   cursor: pointer;
 }
 
-/* Infinite seamless scroll (no jump) */
+/* Infinite seamless scroll */
 @keyframes scroll-left {
   0% {
     transform: translateX(0);
@@ -126,43 +118,73 @@ body{
   background: linear-gradient(to left, rgb(252, 252, 252), transparent);
 }
 
-/* Responsive */
+/* ===== Responsive ===== */
+
+/* Laptop / Large Tablet */
 @media (max-width: 1024px) {
   .client-slider img {
-    height: 220px;
+    height: 250px;
+    width: 250px;
     margin: 0 15px;
   }
 }
 
+/* Tablet / Landscape Mobile */
 @media (max-width: 768px) {
+  .client-slider {
+    animation: scroll-left 20s linear infinite;
+  }
+
   .client-slider img {
-    height: 50%;
+    height: 180px;
+    width: 180px;
     margin: 0 10px;
-  }
-
-  .client-slider img:nth-child(odd) {
-    transform: translateY(20%);
-  }
-}
-
-@media (max-width: 480px) {
-  .client-slider img {
-    height: auto;
-    max-height: 50%;
-    width: 100%;
-    margin: 0 5px;
     border-radius: 12px;
   }
 
   .client-slider img:nth-child(odd) {
-    transform: translateY(10%);
+    transform: translateY(15%);
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .client-slider {
+    animation: scroll-left 15s linear infinite;
+  }
+
+  .client-slider img {
+    height: 130px;
+    width: 130px;
+    margin: 0 6px;
+    border-radius: 10px;
+    border: 3px solid #000;
+  }
+
+  .client-slider img:nth-child(odd) {
+    transform: translateY(8%);
   }
 
   .client-slider-container::before,
   .client-slider-container::after {
-    width: 60px;
+    width: 50px;
   }
 }
+
+/* Very Small Devices */
+@media (max-width: 360px) {
+  .client-slider img {
+    height: 110px;
+    width: 110px;
+    margin: 0 4px;
+  }
+
+  .client-slider-container::before,
+  .client-slider-container::after {
+    width: 35px;
+  }
+}
+
 
 .carousel {
   overflow: hidden;
