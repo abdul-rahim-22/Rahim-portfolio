@@ -1,5 +1,5 @@
 import React from 'react'
-// import Arrowimag from 'src/assets/down-arrow.png'
+
 
 function Porcess() {
     return (
@@ -7,7 +7,7 @@ function Porcess() {
             <h1 className='text-[90px] font-extrabold'>
                 ⚙️ Process <span className='text-[#8e827c] '>/ Workflow</span>
             </h1>
-            {/* <img src={Arrowimag} className='w-15 h-15'></img> */}
+            <img src='https://cdn-icons-png.flaticon.com/512/8841/8841304.png' className='w-15 h-15'></img>
             <p className="text-[20px] md:text-[24px] leading-relaxed text-gray-700 w-[600px]">
                 My work process is simple but structured — built to deliver quality, clarity, and results. From understanding your goals to launching a fast, user-friendly website, every step is handled with clear communication and attention to detail.
             </p>
