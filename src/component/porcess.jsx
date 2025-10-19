@@ -159,7 +159,7 @@ function Process() {
         className="w-14 h-14 mb-4"
         alt="Process Icon"
       />
-      <p className=" process-section text-[18px] md:text-[22px] leading-relaxed text-gray-700 max-w-[900px] text-center">
+      <p className="  text-[18px] md:text-[22px] leading-relaxed text-gray-700 max-w-[900px] text-center">
         My work process is simple but structured — built to deliver quality,
         clarity, and results. From understanding your goals to launching a fast,
         user-friendly website, every step is handled with clear communication
@@ -169,6 +169,7 @@ function Process() {
       <h2 className="  text-3xl md:text-4xl font-semibold text-gray-800 mb-8 pt-10 text-center">
         {"{ My Working Steps }"}
       </h2>
+      <div className="process-section"></div>
 
       {/* Process Cards */}
       <div className="text-black font-sans flex flex-col items-center py-10 space-y-6 w-full">
