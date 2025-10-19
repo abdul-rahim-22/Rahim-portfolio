@@ -151,24 +151,30 @@ function Process() {
 
   return (
     <div className=" flex flex-col justify-center items-center bg-white">
-      <h1 className="text-[70px] md:text-[20px] font-extrabold text-center">
-        😃 Process <span className="text-[#8e827c]">/ Workflow</span>
-      </h1>
-      <img
-        src="https://cdn-icons-png.flaticon.com/512/8841/8841304.png"
-        className="w-14 h-14 mb-4"
-        alt="Process Icon"
-      />
-      <p className="  text-[18px] xl-[80px]  sm-[20px] leading-relaxed text-gray-700 max-w-[900px] text-center">
-        My work process is simple but structured — built to deliver quality,
-        clarity, and results. From understanding your goals to launching a fast,
-        user-friendly website, every step is handled with clear communication
-        and attention to detail.
-      </p>
+       {/* ====== HEADING ====== */}
+  <h1 className="text-[36px] sm:text-[50px] md:text-[70px] font-extrabold leading-tight">
+    😃 Process <span className="text-[#8e827c]">/ Workflow</span>
+  </h1>
 
-      <h2 className="  text-3xl md:text-4xl font-semibold text-gray-800 mb-8 pt-10 text-center">
-        {"{ My Working Steps }"}
-      </h2>
+  {/* ====== ICON ====== */}
+  <img
+    src="https://cdn-icons-png.flaticon.com/512/8841/8841304.png"
+    className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 mt-6 mb-4"
+    alt="Process Icon"
+  />
+
+  {/* ====== PARAGRAPH ====== */}
+  <p className="text-[15px] sm:text-[17px] md:text-[18px] lg:text-[20px] leading-relaxed text-gray-700 max-w-[800px] mx-auto">
+    My work process is simple but structured — built to deliver quality,
+    clarity, and results. From understanding your goals to launching a fast,
+    user-friendly website, every step is handled with clear communication
+    and attention to detail.
+  </p>
+
+  {/* ====== SUB-HEADING ====== */}
+  <h2 className="text-[22px] sm:text-[28px] md:text-[36px] font-semibold text-gray-800 mt-10">
+    {"{ My Working Steps }"}
+  </h2>
       <div className="process-section"></div>
 
       {/* Process Cards */}
