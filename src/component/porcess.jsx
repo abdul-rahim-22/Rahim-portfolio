@@ -159,7 +159,7 @@ function Process() {
         className="w-14 h-14 mb-4"
         alt="Process Icon"
       />
-      <p className="  text-[18px] md:text-[22px] leading-relaxed text-gray-700 max-w-[900px] text-center">
+      <p className="  text-[18px] xl-[80px] md:text-[22px] leading-relaxed text-gray-700 max-w-[900px] text-center">
         My work process is simple but structured — built to deliver quality,
         clarity, and results. From understanding your goals to launching a fast,
         user-friendly website, every step is handled with clear communication
