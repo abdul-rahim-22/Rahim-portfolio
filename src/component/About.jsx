@@ -34,7 +34,7 @@ function About() {
           
         </h2>
 
-        <p className="text-[50px] md:text-[24px] leading-relaxed text-gray-700">
+        <p className="text-[50px] sm:text-[17px] md:text-[18px] lg:text-[50px] leading-relaxed text-gray-700">
   I’m Abdul Rahim and I design experiences that people love to use. I focus on making digital
   products that feel intuitive and easy, while also solving real problems. My
   goal is to create clean, thoughtful designs that make a difference for both
