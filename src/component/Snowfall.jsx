@@ -7,7 +7,7 @@ const Snowfall = () => {
     const snowContainer = document.querySelector(".snow-container");
 
     const particlesPerThousandPixels = 2;
-    const fallSpeed = 2;
+    const fallSpeed = 0.1;
     const pauseWhenNotActive = true;
     const maxSnowflakes = 200;
     const snowflakes = [];
