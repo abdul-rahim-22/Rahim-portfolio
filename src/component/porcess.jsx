@@ -151,7 +151,7 @@ function Process() {
 
   return (
     <div className=" flex flex-col justify-center items-center bg-white">
-      <h1 className="text-[70px] md:text-[90px] font-extrabold text-center">
+      <h1 className="text-[70px] md:text-[20px] font-extrabold text-center">
         😃 Process <span className="text-[#8e827c]">/ Workflow</span>
       </h1>
       <img
