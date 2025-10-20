@@ -66,7 +66,7 @@ function Herosection() {
   </p>
 <a
             className="bg-[#24CDD7] text-black text-[15px] sm:text-[17px] md:text-[18px] px-6 sm:px-8 py-3 rounded-[15px] hover:tracking-wider hover:text-white hover:bg-black transition-all duration-300"
-            href="https://wa.me/03164949427"
+            href="https://calendly.com/abdul-rahim-developer/30min"
             target="_blank"
             rel="noreferrer"
           >
