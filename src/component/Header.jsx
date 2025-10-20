@@ -340,28 +340,28 @@ const Header = () => {
             <a
               href="#home"
               onClick={handleLinkClick}
-              className="cursor-pointer text-white hover:tracking-wider transition-all duration-300"
+              className="cursor-pointer text-[20px] text-white hover:tracking-wider transition-all duration-300"
             >
               Home
             </a>
             <a
               href="#about"
               onClick={handleLinkClick}
-              className="cursor-pointer text-white hover:tracking-wider transition-all duration-300"
+              className="cursor-pointer text-[20px] text-white hover:tracking-wider transition-all duration-300"
             >
               About
             </a>
             <a
               href="#work"
               onClick={handleLinkClick}
-              className="cursor-pointer text-white hover:tracking-wider transition-all duration-300"
+              className="cursor-pointer text-[20px] text-white hover:tracking-wider transition-all duration-300"
             >
               Work
             </a>
             <a
               href="#process"
               onClick={handleLinkClick}
-              className="cursor-pointer text-white hover:tracking-wider transition-all duration-300"
+              className="cursor-pointer text-[20px] text-white hover:tracking-wider transition-all duration-300"
             >
               Process
             </a>
