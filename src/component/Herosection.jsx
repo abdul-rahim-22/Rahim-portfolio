@@ -64,13 +64,20 @@ function Herosection() {
     I build digital experiences that combine creativity, technology, and
     purpose to make every website stand out.
   </p>
-
+<a
+            className="bg-[#24CDD7] text-black text-[15px] sm:text-[17px] md:text-[18px] px-6 sm:px-8 py-3 rounded-[15px] hover:tracking-wider hover:text-white hover:bg-black transition-all duration-300"
+            href="https://wa.me/03164949427"
+            target="_blank"
+            rel="noreferrer"
+          >
+           Book A Free Strategy Call →
+          </a>
   {/* ====== BUTTON ====== */}
-  <button className="bg-[#24CDD7] text-black text-[15px] sm:text-[17px] md:text-[18px] px-6 sm:px-8 py-3 rounded-[15px] hover:tracking-wider hover:text-white hover:bg-black transition-all duration-300">
+  {/* <button className="bg-[#24CDD7] text-black text-[15px] sm:text-[17px] md:text-[18px] px-6 sm:px-8 py-3 rounded-[15px] hover:tracking-wider hover:text-white hover:bg-black transition-all duration-300">
     Book A Free Strategy Call →
-  </button>
+  </button> */}
           {/* Note */}
-          <p className="text-[#888888] text-sm mt-3">Yes, that’s my resume</p>
+          <p className="text-[#888888] text-sm mt-3">Lets Convert your idea in to reality</p>
         </div>
         
       </div>
