@@ -9,7 +9,7 @@ function Footer() {
   </h1>
   
   <h1 className="text-white text-[16px] md:text-base flex items-center gap-2">
-    <span className="inline-flex"><LocalTime /></span> 
+    <span className=""><LocalTime /></span> 
     <span>Follow us on</span>
     <a 
       href="https://www.linkedin.com/in/abdul-raheem-webdeveloper/" 
