@@ -115,7 +115,7 @@ const Header = () => {
         >
           {/* Logo */}
           <h1 className="text-[22px] md:text-[30px] text-white hover:tracking-wider transition-all duration-300 name-btn flex items-center gap-2">
-            A - R
+            AR
           </h1>
 
           {/* Navigation Links */}
