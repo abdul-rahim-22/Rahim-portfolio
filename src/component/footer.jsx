@@ -8,7 +8,7 @@ function Footer() {
     © 2025 Abdul Rahim. All Rights Reserved.
   </h1>
   <h1 className="text-white text-[18px] md:text-base">
-   <span className='inline-flex'><LocalTime/></span> Follow us on LinkedIn | Instagram |
+   <span className='inline-flex'><LocalTime/></span> Follow us on <a src='https://www.linkedin.com/in/abdul-raheem-webdeveloper/'>LinkedIn </a> | Instagram |
   </h1>
 </div>
   )
