@@ -119,19 +119,31 @@ const Header = () => {
           </h1>
 
           {/* Navigation Links */}
-          <div className="flex flex-wrap justify-center gap-4 md:gap-8">
-            <h4 className="cursor-pointer text-white hover:tracking-wider transition-all duration-300">
-              Home
-            </h4>
-            <h4 className="cursor-pointer text-white hover:tracking-wider transition-all duration-300">
-              About
-            </h4>
-            <h4 className="cursor-pointer text-white hover:tracking-wider transition-all duration-300">
-              Work
-            </h4>
-            <h4 className="cursor-pointer text-white hover:tracking-wider transition-all duration-300">
-              Contact
-            </h4>
+<div className="flex flex-wrap justify-center gap-4 md:gap-8">
+  <a
+    href="#home"
+    className="cursor-pointer text-white hover:tracking-wider transition-all duration-300"
+  >
+    Home
+  </a>
+  <a
+    href="#about"
+    className="cursor-pointer text-white hover:tracking-wider transition-all duration-300"
+  >
+    About
+  </a>
+  <a
+    href="#work"
+    className="cursor-pointer text-white hover:tracking-wider transition-all duration-300"
+  >
+    Work
+  </a>
+  <a
+    href="#process"
+    className="cursor-pointer text-white hover:tracking-wider transition-all duration-300"
+  >
+    Process
+  </a>
             <LocalTimeWithCountry />
           </div>
 
