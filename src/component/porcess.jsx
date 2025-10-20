@@ -164,7 +164,7 @@ function Process() {
   />
 
   {/* ====== PARAGRAPH ====== */}
-  <p className="text-[15px] sm:text-[17px] md:text-[18px] lg:text-[20px] leading-relaxed text-gray-700 max-w-[800px] mx-auto sm:pl-[10px] sm:pr-[10px]">
+  <p className="text-[15px] sm:text-[17px] md:text-[18px] lg:text-[30px] leading-relaxed text-gray-700 max-w-[800px] mx-auto sm:pl-[10px] sm:pr-[10px]">
     My work process is simple but structured — built to deliver quality,
     clarity, and results. From understanding your goals to launching a fast,
     user-friendly website, every step is handled with clear communication
