@@ -193,30 +193,30 @@ const Header = () => {
             </button>
 
             {/* Menu Links */}
-            <h4
-              onClick={() => setMenuOpen(false)}
-              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[40px]"
-            >
-              Home
-            </h4>
-            <h4
-              onClick={() => setMenuOpen(false)}
-              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[40px]"
-            >
-              About
-            </h4>
-            <h4
-              onClick={() => setMenuOpen(false)}
-              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[40px]"
-            >
-              Work
-            </h4>
-            <h4
-              onClick={() => setMenuOpen(false)}
-              className="cursor-pointer hover:tracking-wider transition-all duration-300 text-[40px]"
-            >
-              Contact
-            </h4>
+            <a
+    href="#home"
+    className="cursor-pointer text-white hover:tracking-wider transition-all duration-300"
+  >
+    Home
+  </a>
+  <a
+    href="#about"
+    className="cursor-pointer text-white hover:tracking-wider transition-all duration-300"
+  >
+    About
+  </a>
+  <a
+    href="#work"
+    className="cursor-pointer text-white hover:tracking-wider transition-all duration-300"
+  >
+    Work
+  </a>
+  <a
+    href="#process"
+    className="cursor-pointer text-white hover:tracking-wider transition-all duration-300"
+  >
+    Process
+  </a>
 
             <LocalTimeWithCountry />
 
