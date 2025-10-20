@@ -3,7 +3,7 @@ import React from 'react'
 function Portfolio2() {
     return (
         <div className='flex  flex-col justify-center items-center paddinfdiv'>
-            <h1 className='text-[36px] sm:text-[50px] md:text-[70px] font-extrabold leading-tight'>
+            <h1 className='text-[36px] sm:text-[50px] md:text-[70px] font-extrabold leading-tight pt-10'>
                 💫 Featured <span className='text-[#8e827c] '>work</span>
             </h1>
             <img src='https://cdn-icons-png.flaticon.com/512/8841/8841304.png' className='w-15 h-15'></img>
