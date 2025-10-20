@@ -137,7 +137,7 @@ body{
 @media (max-width: 768px) {
   .client-slider img {
     height: 400px;
-    max-height: 400px;
+    max-height: 300px;
     margin: 0 10px;
   }
 
