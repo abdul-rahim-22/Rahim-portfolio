@@ -27,7 +27,7 @@ import ScrambledText from './aboutustext';
 
 function About() {
   return (
-    <section className="w-full flex flex-col items-center justify-center text-center py-20 bg-[#FEFDF8] border-t-2 border-b border-gray-200">
+    <section className="w-full flex flex-col items-center justify-center text-center lg:py-20 bg-[#FEFDF8] sm:py-5 md:py-5">
       <div className="max-w-[900px] px-6">
         <h2 className="text-3xl md:text-4xl font-semibold text-gray-800 mb-6">
           {"{ About Me }"}
