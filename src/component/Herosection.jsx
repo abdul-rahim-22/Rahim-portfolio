@@ -67,7 +67,7 @@ function Herosection() {
 
   {/* ====== BUTTON ====== */}
   <button className="bg-[#24CDD7] text-black text-[15px] sm:text-[17px] md:text-[18px] px-6 sm:px-8 py-3 rounded-[15px] hover:tracking-wider hover:text-white hover:bg-black transition-all duration-300">
-    Download Me →
+    Book A Free Strategy Call →
   </button>
           {/* Note */}
           <p className="text-[#888888] text-sm mt-3">Yes, that’s my resume</p>
