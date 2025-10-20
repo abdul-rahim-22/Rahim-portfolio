@@ -259,7 +259,7 @@ const Header = () => {
         >
           {/* Logo */}
           <h1 className="text-[22px] md:text-[30px] text-white hover:tracking-wider transition-all duration-300 name-btn flex items-center gap-2">
-            AR
+            Abdul.R
           </h1>
 
           {/* Navigation Links */}
@@ -309,7 +309,7 @@ const Header = () => {
         >
           {/* Logo */}
           <div className="flex items-center gap-2 text-white text-[30px] font-semibold">
-            AR
+            Abdul.R
           </div>
 
           {/* Hamburger Icon */}
