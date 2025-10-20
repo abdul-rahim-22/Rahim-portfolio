@@ -8,7 +8,7 @@ function Footer() {
     © 2025 Abdul Rahim. All Rights Reserved.
   </h1>
   
-  <h1 className="text-white text-[16px] md:text-base flex items-center gap-2">
+  <h1 className="text-white text-[16px] md:text-base  items-center gap-2">
     <span className=""><LocalTime /></span> 
     <span>Follow us on</span>
     <a 
