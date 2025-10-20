@@ -153,7 +153,7 @@ const Header = () => {
         >
           {/* Logo */}
           <div className="flex items-center gap-2 text-white text-[30px] font-semibold">
-            Abdul.R
+            AR
           </div>
 
           {/* Hamburger Icon */}
