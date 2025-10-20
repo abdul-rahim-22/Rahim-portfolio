@@ -79,7 +79,7 @@ body{
 
 /* Optional hover */
 .client-slider img:hover {
-  transform: scale(1.05) rotate(5deg);
+  transform: scale(1.2) rotate(5deg);
     transform: rotateY(15deg) translateY(5px);
   transition: transform 0.5s ease;
   cursor: pointer;
@@ -136,7 +136,8 @@ body{
 
 @media (max-width: 768px) {
   .client-slider img {
-    height: 50%;
+    height: 400px;
+    max-height: 400px;
     margin: 0 10px;
   }
 
