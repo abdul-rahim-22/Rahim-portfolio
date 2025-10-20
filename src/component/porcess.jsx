@@ -159,7 +159,7 @@ function Process() {
   {/* ====== ICON ====== */}
   <img
     src="https://cdn-icons-png.flaticon.com/512/8841/8841304.png"
-    className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 mt-6 mb-4"
+    className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 mt-6 mb-6"
     alt="Process Icon"
   />
 
