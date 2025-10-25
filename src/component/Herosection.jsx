@@ -49,7 +49,7 @@ function Herosection() {
 
   return (
     <section>
-      <div   id="home"  className="flex flex-col items-center paddinfdiv justify-center lg:text-center sm:text-left bg-[#FEFDF8] pt-10 pb-10">
+      <div   id="home"  className="flex flex-col items-center paddinfdiv justify-center lg:text-center sm:text-left bg-[#ffffff] pt-10 pb-10">
         <div className="max-w-[1000px]">
          {/* ====== HEADING ====== */}
   <h1 className="  text-[32px] sm:text-[48px] md:text-[60px] lg:text-[50px] xl:text-[50px] leading-tight font-semibold text-black opacity-100 max-w-[1000px]">
