@@ -19,8 +19,8 @@ function Footer() {
     >
       LinkedIn
     </a>
-    <span>|</span>
-    <a 
+     <span> | </span>
+     <a 
       href="#" 
       className="text-[#E1306C] hover:underline"
     >
