@@ -3,7 +3,7 @@
   max-width: 100%;
   margin: 0 auto;
   text-align: center;
-  background-color: #ffffff;
+  background-color: #FEFDF8;
 }
 
 *{
@@ -24,7 +24,7 @@ html {
   }
 }
 body{
-  background-color: #ffffff;
+  background-color: #FEFDF8;
 }
 .fontforever{
   font-family: "Oswald", sans-serif;
