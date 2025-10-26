@@ -119,35 +119,35 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 gsap.registerPlugin(ScrollTrigger);
 
 function Process() {
-  useGSAP(() => {
-    // Pin the entire process section
-    ScrollTrigger.create({
-      trigger: ".process-section",
-      start: "top top",
-      end: "+=4000", // adjust scroll distance for how long it stays pinned
-      pin: true,
-      scrub: true,
-    });
+  // useGSAP(() => {
+  //   // Pin the entire process section
+  //   ScrollTrigger.create({
+  //     trigger: ".process-section",
+  //     start: "top top",
+  //     end: "+=4000", // adjust scroll distance for how long it stays pinned
+  //     pin: true,
+  //     scrub: true,
+  //   });
 
-    // Animate each box inside the pinned section
-    gsap.utils.toArray(".processnum1").forEach((box, i) => {
-      gsap.fromTo(
-        box,
-        { scale: 0.7, opacity: 0.4 },
-        {
-          scale: 1,
-          opacity: 1,
-          // ease: "power2.out",
-          scrollTrigger: {
-            trigger: box,
-            start: "top 80%",
-            end: "top 30%",
-            scrub: true,
-          },
-        }
-      );
-    });
-  });
+  //   // Animate each box inside the pinned section
+  //   gsap.utils.toArray(".processnum1").forEach((box, i) => {
+  //     gsap.fromTo(
+  //       box,
+  //       { scale: 0.7, opacity: 0.4 },
+  //       {
+  //         scale: 1,
+  //         opacity: 1,
+  //         // ease: "power2.out",
+  //         scrollTrigger: {
+  //           trigger: box,
+  //           start: "top 80%",
+  //           end: "top 30%",
+  //           scrub: true,
+  //         },
+  //       }
+  //     );
+  //   });
+  // });
 
   return (
     <div id="process" className=" flex paddinfdiv flex-col justify-center items-center bg-[#FEFDF8] sm:pl-[10px] sm:pr-[10px]">
