@@ -172,7 +172,7 @@ function Process() {
   </p>
 
   {/* ====== SUB-HEADING ====== */}
-  <h2 className="text-[22px] sm:text-[28px] md:text-[36px] font-semibold text-gray-800 mt-10">
+  <h2  id="process" className="text-[22px] sm:text-[28px] md:text-[36px] font-semibold text-gray-800 mt-10">
     {"{ My Working Steps }"}
   </h2>
       {/* <div className="process-section"></div> */}
@@ -211,7 +211,7 @@ function Process() {
             desc: "I don’t just disappear after launch. I offer ongoing updates, fixes, and technical support to keep your website secure, fast, and up-to-date.",
           },
         ].map((step, index) => (
-          <div id="process"
+          <div 
             key={index}
             className="processnum1   w-[90%] max-w-[1200px] border-2 border-black rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-start gap-6 transition-transform duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,0,0,0.2)] bg-white"
           >
