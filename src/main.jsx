@@ -19,7 +19,6 @@ import Processs from './component/porcess.jsx'
 
 createRoot(document.getElementById('root')).render(
   <>
-  <SplashCursor />
   <SpeedInsights />
   <Header/>
   <Herosection/>
