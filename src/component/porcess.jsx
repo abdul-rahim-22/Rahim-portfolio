@@ -175,7 +175,7 @@ function Process() {
   <h2 className="text-[22px] sm:text-[28px] md:text-[36px] font-semibold text-gray-800 mt-10">
     {"{ My Working Steps }"}
   </h2>
-      <div className="process-section"></div>
+      {/* <div className="process-section"></div> */}
 
       {/* Process Cards */}
       <div className="text-black font-sans flex flex-col items-center py-10 space-y-6 w-full">
