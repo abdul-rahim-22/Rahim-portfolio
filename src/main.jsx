@@ -26,7 +26,7 @@ createRoot(document.getElementById('root')).render(
   <Textcourcorl/>
   <About/>
   <TextInfiniteCarousel/>
-  <Portfolio2/>
+  {/* <Portfolio2/> */}
   <Portfolio/>
   <Processs/>
   <Footer/>
