@@ -25,12 +25,12 @@ createRoot(document.getElementById('root')).render(
   <Herosection/>
   <Textcourcorl/>
   {/* <LocalTimeWithCountry/> */}
-  <About/>
+  {/* <About/>
   <TextInfiniteCarousel/>
   <Portfolio2/>
   <Portfolio/>
   <Processs/>
-  <Footer/>
+  <Footer/> */}
   </>
  
 ) 
