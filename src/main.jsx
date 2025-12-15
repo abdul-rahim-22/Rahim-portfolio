@@ -24,13 +24,13 @@ createRoot(document.getElementById('root')).render(
   <Header/>
   <Herosection/>
   <Textcourcorl/>
-  {/* <LocalTimeWithCountry/>
+  <LocalTimeWithCountry/>
   <About/>
   <TextInfiniteCarousel/>
   <Portfolio2/>
   <Portfolio/>
   <Processs/>
-  <Footer/> */}
+  <Footer/>
   </>
  
 ) 
