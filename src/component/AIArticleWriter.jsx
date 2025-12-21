@@ -10,14 +10,23 @@ import {
   LogOut,
   FileText,
   Briefcase,
+  Instagram,
+  Download,
 } from "lucide-react";
 
 const PUTER_SCRIPT_SRC = "https://js.puter.com/v2/";
 
-// ✅ Use a stable model for ALL modes (fix for LinkedIn/Upwork)
+// ✅ Stable model for ALL modes
 const PRIMARY_MODEL = "gpt-4o-mini";
-// ✅ Optional fallback if primary fails
 const FALLBACK_MODEL = null; // null => let Puter choose default
+
+// ======================
+// ✅ RapidAPI: Instagram Tagged Posts (Frontend-only)
+// ======================
+// ⚠️ Key will be visible in browser. Use backend to protect it.
+const IG_RAPIDAPI_KEY = "PASTE_YOUR_RAPIDAPI_KEY_HERE"; // <— replace
+const IG_RAPIDAPI_HOST = "instagram-scraper-stable-api.p.rapidapi.com";
+const IG_TAGGED_URL = `https://${IG_RAPIDAPI_HOST}/get_ig_user_tagged_posts.php`;
 
 function isProbablyUrl(text) {
   const t = text.trim();
@@ -32,11 +41,8 @@ function htmlToReadableText(html) {
   try {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, "text/html");
-    doc
-      .querySelectorAll("script, style, noscript, iframe, svg")
-      .forEach((n) => n.remove());
-    const text = (doc.body?.textContent || "").replace(/\s+/g, " ").trim();
-    return text;
+    doc.querySelectorAll("script, style, noscript, iframe, svg").forEach((n) => n.remove());
+    return (doc.body?.textContent || "").replace(/\s+/g, " ").trim();
   } catch {
     return (html || "").replace(/\s+/g, " ").trim();
   }
@@ -103,6 +109,16 @@ export default function AIWriterPuterFixed() {
 
   const [copied, setCopied] = useState(false);
 
+  // ======================
+  // ✅ Instagram Tagged Posts feature states
+  // ======================
+  const [igUsername, setIgUsername] = useState(""); // optional (depends on API)
+  const [igUserId, setIgUserId] = useState(""); // optional (depends on API)
+  const [igExtraParams, setIgExtraParams] = useState(""); // key=value per line
+  const [igLoading, setIgLoading] = useState(false);
+  const [igError, setIgError] = useState("");
+  const [igResultText, setIgResultText] = useState("");
+
   const modelUsed = useMemo(() => PRIMARY_MODEL, []);
 
   const ensurePuter = async () => {
@@ -115,7 +131,6 @@ export default function AIWriterPuterFixed() {
     setError("");
     const puter = await ensurePuter();
 
-    // ✅ Must be triggered by a user click (popup)
     if (puter?.ui?.authenticateWithPuter) {
       await puter.ui.authenticateWithPuter();
       setSignedIn(true);
@@ -149,7 +164,6 @@ export default function AIWriterPuterFixed() {
     }
 
     if (!isProbablyUrl(trimmed)) {
-      // ✅ Also limit extremely long pasted text (prevents request failures)
       return { sourceText: trimmed.slice(0, 12000), fetchedFromUrl: false };
     }
 
@@ -202,8 +216,7 @@ ${common}
 
     if (mode === "linkedin") {
       return {
-        system:
-          "You write LinkedIn posts in simple English. Make it scannable, practical, and human. No hype.",
+        system: "You write LinkedIn posts in simple English. Make it scannable, practical, and human. No hype.",
         user: `
 Idea / source:
 ${sourceText}
@@ -223,8 +236,7 @@ ${common}
 
     // upwork
     return {
-      system:
-        "You are an Upwork proposal writer. Write concise, specific proposals in simple English matching the client needs.",
+      system: "You are an Upwork proposal writer. Write concise, specific proposals in simple English matching the client needs.",
       user: `
 Client job post / requirements:
 ${sourceText}
@@ -275,23 +287,91 @@ ${common}
     };
   };
 
-  // ✅ Robust call with fallback + real error message
   const chatWithFallback = async (puter, messages, opts) => {
     try {
       return await puter.ai.chat(messages, false, opts);
     } catch (e1) {
       const msg1 = stringifyError(e1);
-
-      // Retry once without forcing model (or with fallback model)
       try {
         const retryOpts = { ...opts };
         if (FALLBACK_MODEL) retryOpts.model = FALLBACK_MODEL;
-        else delete retryOpts.model; // let Puter decide default
+        else delete retryOpts.model;
         return await puter.ai.chat(messages, false, retryOpts);
       } catch (e2) {
         const msg2 = stringifyError(e2);
         throw new Error(`Puter AI error.\n\nFirst try:\n${msg1}\n\nRetry:\n${msg2}`);
       }
+    }
+  };
+
+  // ======================
+  // ✅ Instagram Tagged posts call
+  // ======================
+  const parseExtraParams = (text) => {
+    // accepts lines like:
+    // key=value
+    // key: value
+    const params = {};
+    const lines = (text || "")
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+
+    for (const line of lines) {
+      let k = "";
+      let v = "";
+      if (line.includes("=")) {
+        [k, v] = line.split("=").map((s) => s.trim());
+      } else if (line.includes(":")) {
+        [k, v] = line.split(":").map((s) => s.trim());
+      }
+      if (k) params[k] = v ?? "";
+    }
+    return params;
+  };
+
+  const fetchTaggedPosts = async () => {
+    setIgError("");
+    setIgResultText("");
+
+    if (!IG_RAPIDAPI_KEY || IG_RAPIDAPI_KEY === "PASTE_YOUR_RAPIDAPI_KEY_HERE") {
+      setIgError("Please set IG_RAPIDAPI_KEY at the top of the file.");
+      return;
+    }
+
+    // Build form-urlencoded body
+    const extra = parseExtraParams(igExtraParams);
+    const bodyObj = {
+      ...extra,
+    };
+
+    // Optional fields (only add if provided)
+    if (igUsername.trim()) bodyObj.username = igUsername.trim();
+    if (igUserId.trim()) bodyObj.user_id = igUserId.trim();
+
+    setIgLoading(true);
+    try {
+      const res = await fetch(IG_TAGGED_URL, {
+        method: "POST",
+        headers: {
+          "x-rapidapi-key": IG_RAPIDAPI_KEY,
+          "x-rapidapi-host": IG_RAPIDAPI_HOST,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams(bodyObj),
+      });
+
+      const text = await res.text();
+
+      if (!res.ok) {
+        throw new Error(text || `Request failed (HTTP ${res.status})`);
+      }
+
+      setIgResultText(text);
+    } catch (e) {
+      setIgError(stringifyError(e));
+    } finally {
+      setIgLoading(false);
     }
   };
 
@@ -302,10 +382,7 @@ ${common}
 
     const trimmed = input.trim();
     if (!trimmed) {
-      setError(mode === "upwork"
-        ? "Please paste the client job description."
-        : "Please enter a topic, a URL, or source text."
-      );
+      setError(mode === "upwork" ? "Please paste the client job description." : "Please enter a topic, a URL, or source text.");
       return;
     }
 
@@ -313,7 +390,6 @@ ${common}
     try {
       const puter = await ensurePuter();
 
-      // ✅ For best stability (especially LinkedIn/Upwork), require sign-in
       if (!signedIn) {
         await signInWithPuter();
       }
@@ -380,12 +456,11 @@ ${common}
               <Sparkles className="w-7 h-7 text-white" />
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-             (Free Write) Article • LinkedIn • Upwork 
+              (Free Write) Article • LinkedIn • Upwork
             </h1>
           </div>
           <p className="text-gray-600">Provide You Idea</p>
 
-          {/* ✅ Hide URL hint on Upwork mode */}
           {mode !== "upwork" && (
             <p className="text-xs text-gray-500 mt-2 flex items-center justify-center gap-2">
               <LinkIcon className="w-4 h-4" />
@@ -398,25 +473,13 @@ ${common}
         <div className="bg-white rounded-2xl shadow-xl p-4 mb-6 border border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="text-sm text-gray-700">
             <div className="flex items-center gap-2">
-              <span
-                className={`inline-block w-2.5 h-2.5 rounded-full ${
-                  puterReady ? "bg-green-500" : "bg-gray-300"
-                }`}
-              />
-              <span>Statis: {puterReady ? "Loaded" : "Loads on action"}</span>
+              <span className={`inline-block w-2.5 h-2.5 rounded-full ${puterReady ? "bg-green-500" : "bg-gray-300"}`} />
+              <span>Status: {puterReady ? "Loaded" : "Loads on action"}</span>
             </div>
             <div className="flex items-center gap-2 mt-1">
-              <span
-                className={`inline-block w-2.5 h-2.5 rounded-full ${
-                  signedIn ? "bg-green-500" : "bg-gray-300"
-                }`}
-              />
+              <span className={`inline-block w-2.5 h-2.5 rounded-full ${signedIn ? "bg-green-500" : "bg-gray-300"}`} />
               <span>Sign-in: {signedIn ? "Signed in" : "Not signed in"}</span>
             </div>
-            {/* <div className="mt-1 text-xs text-gray-500">
-              Model used:{" "}
-              <span className="font-semibold text-gray-700">{modelUsed}</span>
-            </div> */}
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -450,9 +513,7 @@ ${common}
             <button
               onClick={() => setMode("article")}
               className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
-                mode === "article"
-                  ? "bg-purple-600 text-white"
-                  : "bg-gray-50 hover:bg-gray-100 text-gray-700"
+                mode === "article" ? "bg-purple-600 text-white" : "bg-gray-50 hover:bg-gray-100 text-gray-700"
               }`}
             >
               Article (SEO)
@@ -460,9 +521,7 @@ ${common}
             <button
               onClick={() => setMode("linkedin")}
               className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
-                mode === "linkedin"
-                  ? "bg-purple-600 text-white"
-                  : "bg-gray-50 hover:bg-gray-100 text-gray-700"
+                mode === "linkedin" ? "bg-purple-600 text-white" : "bg-gray-50 hover:bg-gray-100 text-gray-700"
               }`}
             >
               LinkedIn Post
@@ -470,9 +529,7 @@ ${common}
             <button
               onClick={() => setMode("upwork")}
               className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
-                mode === "upwork"
-                  ? "bg-purple-600 text-white"
-                  : "bg-gray-50 hover:bg-gray-100 text-gray-700"
+                mode === "upwork" ? "bg-purple-600 text-white" : "bg-gray-50 hover:bg-gray-100 text-gray-700"
               }`}
             >
               Upwork Proposal
@@ -483,33 +540,15 @@ ${common}
         {/* Input */}
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border border-gray-100">
           <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-            {mode === "upwork" ? (
-              <>
-                <FileText className="w-4 h-4 text-purple-600" />
-                Client Job Description
-              </>
-            ) : isProbablyUrl(input.trim()) ? (
-              <>
-                <LinkIcon className="w-4 h-4 text-purple-600" />
-                Topic / URL / Source Text
-              </>
-            ) : (
-              <>
-                <FileText className="w-4 h-4 text-purple-600" />
-                Topic / URL / Source Text
-              </>
-            )}
+            <FileText className="w-4 h-4 text-purple-600" />
+            {mode === "upwork" ? "Client Job Description" : "Topic / URL / Source Text"}
           </label>
 
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onCtrlEnter}
-            placeholder={
-              mode === "upwork"
-                ? "Paste the client job description here..."
-                : "Enter a topic OR paste a public URL OR paste source text..."
-            }
+            placeholder={mode === "upwork" ? "Paste the client job description here..." : "Enter a topic OR paste a public URL OR paste source text..."}
             className="w-full h-44 p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-all text-gray-700"
           />
 
@@ -544,6 +583,108 @@ ${common}
             </div>
           )}
 
+          {/* ✅ NEW: Instagram Tagged Posts API feature (only in Upwork mode) */}
+          {mode === "upwork" && (
+            <div className="mt-6 bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+                <div className="flex items-center gap-2">
+                  <Instagram className="w-5 h-5 text-purple-600" />
+                  <h3 className="text-lg font-bold text-gray-800">Instagram Tagged Posts (RapidAPI)</h3>
+                </div>
+
+                <button
+                  onClick={fetchTaggedPosts}
+                  disabled={igLoading}
+                  className="inline-flex items-center justify-center gap-2 text-sm bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-400 text-white px-4 py-2 rounded-lg font-medium"
+                >
+                  {igLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Fetching...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      Fetch Tagged Posts
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <p className="text-xs text-gray-500 mb-4">
+                API parameters different ho sakte hain. Agar aapko exact params pata hain, “Extra Params” me key=value lines me add kar do.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                  <label className="text-sm font-semibold text-gray-700 mb-2 block">Username (optional)</label>
+                  <input
+                    value={igUsername}
+                    onChange={(e) => setIgUsername(e.target.value)}
+                    placeholder="example: john_doe"
+                    className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-700"
+                  />
+                </div>
+
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                  <label className="text-sm font-semibold text-gray-700 mb-2 block">User ID (optional)</label>
+                  <input
+                    value={igUserId}
+                    onChange={(e) => setIgUserId(e.target.value)}
+                    placeholder="example: 1234567890"
+                    className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-700"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4 bg-gray-50 border border-gray-200 rounded-xl p-4">
+                <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                  Extra Params (optional) — one per line (key=value)
+                </label>
+                <textarea
+                  value={igExtraParams}
+                  onChange={(e) => setIgExtraParams(e.target.value)}
+                  placeholder={`Examples:\ncount=20\ncursor=\ninclude_media=true`}
+                  className="w-full h-28 p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-gray-700"
+                />
+              </div>
+
+              {igError && (
+                <div className="mt-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-red-700 whitespace-pre-wrap">{igError}</div>
+                  </div>
+                </div>
+              )}
+
+              {igResultText && (
+                <div className="mt-4 bg-gray-50 border border-gray-200 rounded-xl p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                    <div className="font-semibold text-gray-800 flex items-center gap-2">
+                      <Download className="w-4 h-4 text-purple-600" />
+                      API Response
+                    </div>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(igResultText);
+                        } catch {
+                          setIgError("Copy failed. Please manually copy the response below.");
+                        }
+                      }}
+                      className="inline-flex items-center gap-2 text-xs bg-white hover:bg-gray-100 text-gray-700 px-3 py-2 rounded-lg border"
+                    >
+                      <Copy className="w-4 h-4" />
+                      Copy Response
+                    </button>
+                  </div>
+                  <pre className="text-xs whitespace-pre-wrap break-words text-gray-800">{igResultText}</pre>
+                </div>
+              )}
+            </div>
+          )}
+
           {error && (
             <div className="mt-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
               <div className="flex items-start gap-3">
@@ -566,7 +707,7 @@ ${common}
             ) : (
               <>
                 <Sparkles className="w-5 h-5" />
-                 Generate {/*<span className="text-xs opacity-80">(Ctrl + Enter)</span> */}
+                Generate
               </>
             )}
           </button>
@@ -613,9 +754,7 @@ ${common}
             </div>
 
             <div className="prose prose-lg max-w-none">
-              <div className="whitespace-pre-wrap text-gray-700 leading-relaxed text-base">
-                {output}
-              </div>
+              <div className="whitespace-pre-wrap text-gray-700 leading-relaxed text-base">{output}</div>
             </div>
           </div>
         )}
