@@ -48,41 +48,6 @@ function htmlToReadableText(html) {
   }
 }
 
-async function loadPuterIfNeeded() {
-  if (window.puter) return window.puter;
-
-  const existing = document.getElementById("puterjs-sdk");
-  if (existing) {
-    await new Promise((resolve, reject) => {
-      existing.addEventListener("load", resolve, { once: true });
-      existing.addEventListener("error", reject, { once: true });
-    });
-    if (!window.puter) throw new Error("Puter.js loaded but `window.puter` is missing.");
-    return window.puter;
-  }
-
-  await new Promise((resolve, reject) => {
-    const s = document.createElement("script");
-    s.id = "puterjs-sdk";
-    s.src = PUTER_SCRIPT_SRC;
-    s.async = true;
-    s.onload = resolve;
-    s.onerror = () => reject(new Error("Failed to load Puter.js script."));
-    document.head.appendChild(s);
-  });
-
-  if (!window.puter) throw new Error("Puter.js loaded but `window.puter` is missing.");
-  return window.puter;
-}
-
-function extractChatText(resp) {
-  if (!resp) return "";
-  if (typeof resp === "string") return resp.trim();
-  const content = resp?.message?.content;
-  if (typeof content === "string") return content.trim();
-  return "";
-}
-
 function stringifyError(err) {
   if (!err) return "Unknown error.";
   if (typeof err === "string") return err;
@@ -92,6 +57,92 @@ function stringifyError(err) {
   } catch {
     return String(err);
   }
+}
+
+// ✅ Get global puter safely (docs say global name is `puter`) :contentReference[oaicite:1]{index=1}
+function getPuterGlobal() {
+  // Sometimes libraries attach to globalThis, sometimes window.
+  const g = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : {};
+  return g.puter || g.Puter || null;
+}
+
+// ✅ Wait/poll after script load (fixes timing + some edge cases)
+async function waitForPuterGlobal(timeoutMs = 5000, intervalMs = 50) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const p = getPuterGlobal();
+    if (p) return p;
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+  return null;
+}
+
+async function loadPuterIfNeeded() {
+  // If already present, return quickly
+  const existingGlobal = getPuterGlobal();
+  if (existingGlobal) return existingGlobal;
+
+  // If script tag already exists, wait for it
+  const existing = document.getElementById("puterjs-sdk");
+  if (existing) {
+    await new Promise((resolve, reject) => {
+      existing.addEventListener("load", resolve, { once: true });
+      existing.addEventListener("error", reject, { once: true });
+    });
+
+    const puterAfter = await waitForPuterGlobal(5000, 50);
+    if (!puterAfter) {
+      throw new Error(
+        [
+          "Puter script loaded but global `puter` is still missing.",
+          "",
+          "Likely causes:",
+          "- Your live host CSP is blocking or restricting js.puter.com",
+          "- Adblock/Brave shields are blocking the SDK",
+          "- The script URL returned an HTML/redirect/error response instead of JS",
+          "",
+          "Quick checks:",
+          "1) Open DevTools → Network → filter: puter → open https://js.puter.com/v2/ request",
+          "2) Confirm Status=200 and Response is JavaScript (not HTML)",
+          "3) Temporarily disable adblock and test again",
+        ].join("\n")
+      );
+    }
+    return puterAfter;
+  }
+
+  // Create script tag
+  await new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.id = "puterjs-sdk";
+    s.src = PUTER_SCRIPT_SRC;
+    s.async = true;
+    s.crossOrigin = "anonymous"; // ✅ helps in some CSP/hosting combos
+    s.onload = resolve;
+    s.onerror = () => reject(new Error("Failed to load Puter.js script. (Check CSP/adblock/network)"));
+    document.head.appendChild(s);
+  });
+
+  const puter = await waitForPuterGlobal(5000, 50);
+  if (!puter) {
+    throw new Error(
+      [
+        "Puter script loaded but global `puter` is missing.",
+        "",
+        "This usually happens on live deploy due to CSP/adblock or script not returning JS.",
+        "Check DevTools → Network request for https://js.puter.com/v2/",
+      ].join("\n")
+    );
+  }
+  return puter;
+}
+
+function extractChatText(resp) {
+  if (!resp) return "";
+  if (typeof resp === "string") return resp.trim();
+  const content = resp?.message?.content;
+  if (typeof content === "string") return content.trim();
+  return "";
 }
 
 export default function AIWriterPuterFixed() {
@@ -112,9 +163,9 @@ export default function AIWriterPuterFixed() {
   // ======================
   // ✅ Instagram Tagged Posts feature states
   // ======================
-  const [igUsername, setIgUsername] = useState(""); // optional (depends on API)
-  const [igUserId, setIgUserId] = useState(""); // optional (depends on API)
-  const [igExtraParams, setIgExtraParams] = useState(""); // key=value per line
+  const [igUsername, setIgUsername] = useState("");
+  const [igUserId, setIgUserId] = useState("");
+  const [igExtraParams, setIgExtraParams] = useState("");
   const [igLoading, setIgLoading] = useState(false);
   const [igError, setIgError] = useState("");
   const [igResultText, setIgResultText] = useState("");
@@ -131,6 +182,7 @@ export default function AIWriterPuterFixed() {
     setError("");
     const puter = await ensurePuter();
 
+    // Try different auth methods (SDK versions can differ)
     if (puter?.ui?.authenticateWithPuter) {
       await puter.ui.authenticateWithPuter();
       setSignedIn(true);
@@ -142,7 +194,7 @@ export default function AIWriterPuterFixed() {
       return;
     }
 
-    throw new Error("Puter sign-in method not available.");
+    throw new Error("Puter sign-in method not available in this SDK build.");
   };
 
   const signOutFromPuter = async () => {
@@ -167,6 +219,7 @@ export default function AIWriterPuterFixed() {
       return { sourceText: trimmed.slice(0, 12000), fetchedFromUrl: false };
     }
 
+    // Puter fetch (serverless). If you want, normal fetch also works.
     const res = await puter.net.fetch(trimmed);
     const html = await res.text();
     const text = htmlToReadableText(html);
@@ -289,6 +342,7 @@ ${common}
 
   const chatWithFallback = async (puter, messages, opts) => {
     try {
+      // puter.ai.chat supports messages array syntax :contentReference[oaicite:2]{index=2}
       return await puter.ai.chat(messages, false, opts);
     } catch (e1) {
       const msg1 = stringifyError(e1);
@@ -308,9 +362,6 @@ ${common}
   // ✅ Instagram Tagged posts call
   // ======================
   const parseExtraParams = (text) => {
-    // accepts lines like:
-    // key=value
-    // key: value
     const params = {};
     const lines = (text || "")
       .split("\n")
@@ -339,13 +390,8 @@ ${common}
       return;
     }
 
-    // Build form-urlencoded body
     const extra = parseExtraParams(igExtraParams);
-    const bodyObj = {
-      ...extra,
-    };
-
-    // Optional fields (only add if provided)
+    const bodyObj = { ...extra };
     if (igUsername.trim()) bodyObj.username = igUsername.trim();
     if (igUserId.trim()) bodyObj.user_id = igUserId.trim();
 
@@ -583,7 +629,7 @@ ${common}
             </div>
           )}
 
-          {/* ✅ NEW: Instagram Tagged Posts API feature (only in Upwork mode) */}
+          {/* Instagram Tagged Posts feature (only in Upwork mode) */}
           {mode === "upwork" && (
             <div className="mt-6 bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
