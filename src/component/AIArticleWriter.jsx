@@ -539,7 +539,7 @@ ${common}
             </div>
 
             <div className="prose prose-lg max-w-none">
-              <div className="whitespace-pre-wrap text-gray-700 leading-relaxed text-base">{output}</div>
+              <div className="whitespace-pre-wrap break-words text-left w-full text-gray-700 leading-relaxed text-base">{output}</div>
             </div>
           </div>
         )}
