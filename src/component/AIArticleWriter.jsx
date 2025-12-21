@@ -14,7 +14,13 @@ import {
   Download,
 } from "lucide-react";
 
-const PUTER_SCRIPT_SRC = "https://js.puter.com/v2/";
+// ======================
+// ✅ Puter SDK (Permanent fix)
+// ======================
+// 1) Puter SDK ko locally host karo: /public/puter.js
+// 2) Agar local missing ho, fallback CDN (without crossOrigin)
+const PUTER_LOCAL_SRC = "/puter.js";
+const PUTER_CDN_SRC = "https://js.puter.com/v2/";
 
 // ✅ Stable model for ALL modes
 const PRIMARY_MODEL = "gpt-4o-mini";
@@ -59,15 +65,18 @@ function stringifyError(err) {
   }
 }
 
-// ✅ Get global puter safely (docs say global name is `puter`) :contentReference[oaicite:1]{index=1}
+// ✅ Puter global getter (no crossOrigin anywhere)
 function getPuterGlobal() {
-  // Sometimes libraries attach to globalThis, sometimes window.
-  const g = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : {};
-  return g.puter || g.Puter || null;
+  const g =
+    typeof globalThis !== "undefined"
+      ? globalThis
+      : typeof window !== "undefined"
+      ? window
+      : {};
+  return g.puter || null;
 }
 
-// ✅ Wait/poll after script load (fixes timing + some edge cases)
-async function waitForPuterGlobal(timeoutMs = 5000, intervalMs = 50) {
+async function waitForPuterGlobal(timeoutMs = 7000, intervalMs = 50) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     const p = getPuterGlobal();
@@ -77,64 +86,61 @@ async function waitForPuterGlobal(timeoutMs = 5000, intervalMs = 50) {
   return null;
 }
 
-async function loadPuterIfNeeded() {
-  // If already present, return quickly
-  const existingGlobal = getPuterGlobal();
-  if (existingGlobal) return existingGlobal;
+// ✅ Script loader helper
+async function loadScript(src, id) {
+  // already loaded?
+  if (document.getElementById(id)) return;
 
-  // If script tag already exists, wait for it
-  const existing = document.getElementById("puterjs-sdk");
-  if (existing) {
-    await new Promise((resolve, reject) => {
-      existing.addEventListener("load", resolve, { once: true });
-      existing.addEventListener("error", reject, { once: true });
-    });
-
-    const puterAfter = await waitForPuterGlobal(5000, 50);
-    if (!puterAfter) {
-      throw new Error(
-        [
-          "Puter script loaded but global `puter` is still missing.",
-          "",
-          "Likely causes:",
-          "- Your live host CSP is blocking or restricting js.puter.com",
-          "- Adblock/Brave shields are blocking the SDK",
-          "- The script URL returned an HTML/redirect/error response instead of JS",
-          "",
-          "Quick checks:",
-          "1) Open DevTools → Network → filter: puter → open https://js.puter.com/v2/ request",
-          "2) Confirm Status=200 and Response is JavaScript (not HTML)",
-          "3) Temporarily disable adblock and test again",
-        ].join("\n")
-      );
-    }
-    return puterAfter;
-  }
-
-  // Create script tag
   await new Promise((resolve, reject) => {
     const s = document.createElement("script");
-    s.id = "puterjs-sdk";
-    s.src = PUTER_SCRIPT_SRC;
+    s.id = id;
+    s.src = src;
     s.async = true;
-    s.crossOrigin = "anonymous"; // ✅ helps in some CSP/hosting combos
+
+    // ✅ IMPORTANT: never set s.crossOrigin (it triggers CORS enforcement)
+    // s.crossOrigin = "anonymous"; // ❌ do NOT do this
+
     s.onload = resolve;
-    s.onerror = () => reject(new Error("Failed to load Puter.js script. (Check CSP/adblock/network)"));
+    s.onerror = () => reject(new Error(`Failed to load script: ${src}`));
     document.head.appendChild(s);
   });
+}
 
-  const puter = await waitForPuterGlobal(5000, 50);
-  if (!puter) {
-    throw new Error(
-      [
-        "Puter script loaded but global `puter` is missing.",
-        "",
-        "This usually happens on live deploy due to CSP/adblock or script not returning JS.",
-        "Check DevTools → Network request for https://js.puter.com/v2/",
-      ].join("\n")
-    );
+// ✅ Permanent loader: Local first, CDN fallback
+async function loadPuterIfNeeded() {
+  const already = getPuterGlobal();
+  if (already) return already;
+
+  // 1) Try local file (Permanent fix)
+  try {
+    await loadScript(PUTER_LOCAL_SRC, "puterjs-sdk-local");
+    const p1 = await waitForPuterGlobal(4000, 50);
+    if (p1) return p1;
+  } catch {
+    // ignore, fallback to CDN
   }
-  return puter;
+
+  // 2) Fallback to CDN
+  await loadScript(PUTER_CDN_SRC, "puterjs-sdk-cdn");
+  const p2 = await waitForPuterGlobal(7000, 50);
+  if (p2) return p2;
+
+  // If still not found:
+  throw new Error(
+    [
+      "Puter SDK loaded but global `puter` is missing.",
+      "",
+      "Permanent fix:",
+      "• Download Puter SDK from https://js.puter.com/v2/ and place it in /public/puter.js",
+      "",
+      "Other possible causes:",
+      "• Adblock/Brave shields blocking scripts",
+      "• Host-level CSP blocking inline/eval (rare) or third-party resources",
+      "",
+      "Debug:",
+      "• DevTools → Network → check /puter.js returns 200 and JS content",
+    ].join("\n")
+  );
 }
 
 function extractChatText(resp) {
@@ -182,7 +188,6 @@ export default function AIWriterPuterFixed() {
     setError("");
     const puter = await ensurePuter();
 
-    // Try different auth methods (SDK versions can differ)
     if (puter?.ui?.authenticateWithPuter) {
       await puter.ui.authenticateWithPuter();
       setSignedIn(true);
@@ -219,7 +224,6 @@ export default function AIWriterPuterFixed() {
       return { sourceText: trimmed.slice(0, 12000), fetchedFromUrl: false };
     }
 
-    // Puter fetch (serverless). If you want, normal fetch also works.
     const res = await puter.net.fetch(trimmed);
     const html = await res.text();
     const text = htmlToReadableText(html);
@@ -287,7 +291,6 @@ ${common}
       };
     }
 
-    // upwork
     return {
       system: "You are an Upwork proposal writer. Write concise, specific proposals in simple English matching the client needs.",
       user: `
@@ -342,7 +345,6 @@ ${common}
 
   const chatWithFallback = async (puter, messages, opts) => {
     try {
-      // puter.ai.chat supports messages array syntax :contentReference[oaicite:2]{index=2}
       return await puter.ai.chat(messages, false, opts);
     } catch (e1) {
       const msg1 = stringifyError(e1);
@@ -371,11 +373,8 @@ ${common}
     for (const line of lines) {
       let k = "";
       let v = "";
-      if (line.includes("=")) {
-        [k, v] = line.split("=").map((s) => s.trim());
-      } else if (line.includes(":")) {
-        [k, v] = line.split(":").map((s) => s.trim());
-      }
+      if (line.includes("=")) [k, v] = line.split("=").map((s) => s.trim());
+      else if (line.includes(":")) [k, v] = line.split(":").map((s) => s.trim());
       if (k) params[k] = v ?? "";
     }
     return params;
@@ -409,10 +408,7 @@ ${common}
 
       const text = await res.text();
 
-      if (!res.ok) {
-        throw new Error(text || `Request failed (HTTP ${res.status})`);
-      }
-
+      if (!res.ok) throw new Error(text || `Request failed (HTTP ${res.status})`);
       setIgResultText(text);
     } catch (e) {
       setIgError(stringifyError(e));
@@ -457,16 +453,12 @@ ${common}
       let text = extractChatText(resp);
       if (!text) throw new Error("Empty response from AI. Please try again.");
 
-      // Article strict word count fix once
       if (mode === "article") {
         const wc = wordCount(text);
         if (wc < 800 || wc > 1000) {
           const fixMessages = [
             { role: "system", content: system },
-            {
-              role: "user",
-              content: `Rewrite the article to be STRICTLY 800–1000 words. Keep exact structure. Here is draft:\n\n${text}`,
-            },
+            { role: "user", content: `Rewrite the article to be STRICTLY 800–1000 words. Keep exact structure. Here is draft:\n\n${text}` },
           ];
           const resp2 = await chatWithFallback(puter, fixMessages, {
             model: modelUsed,
@@ -629,7 +621,7 @@ ${common}
             </div>
           )}
 
-          {/* Instagram Tagged Posts feature (only in Upwork mode) */}
+          {/* Instagram Tagged Posts API feature (only in Upwork mode) */}
           {mode === "upwork" && (
             <div className="mt-6 bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
