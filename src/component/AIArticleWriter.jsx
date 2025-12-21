@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Loader2,
   Sparkles,
@@ -12,9 +12,7 @@ import {
   Briefcase,
 } from "lucide-react";
 
-// ✅ Stable model
 const PRIMARY_MODEL = "gpt-4o-mini";
-const FALLBACK_MODEL = null;
 
 function isProbablyUrl(text) {
   const t = text.trim();
@@ -55,7 +53,16 @@ function stringifyError(err) {
   }
 }
 
-export default function AIWriterPuterPermanent() {
+async function waitForPuter(timeoutMs = 8000) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    if (typeof window !== "undefined" && window.puter) return window.puter;
+    await new Promise((r) => setTimeout(r, 60));
+  }
+  return null;
+}
+
+export default function AIWriterPuterStable() {
   const [mode, setMode] = useState("article"); // article | linkedin | upwork
   const [input, setInput] = useState("");
   const [experience, setExperience] = useState("");
@@ -69,72 +76,50 @@ export default function AIWriterPuterPermanent() {
   const [signedIn, setSignedIn] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const [puter, setPuter] = useState(null);
-
   const modelUsed = useMemo(() => PRIMARY_MODEL, []);
 
-  // ✅ Permanent: load Puter via NPM (SSR-safe)
-  useEffect(() => {
-    let alive = true;
-
-    (async () => {
-      try {
-        if (typeof window === "undefined") return;
-        const mod = await import("@heyputer/puter.js"); // docs: import { puter } ... :contentReference[oaicite:1]{index=1}
-        if (!alive) return;
-        setPuter(mod.puter);
-        setPuterReady(true);
-      } catch (e) {
-        if (!alive) return;
-        setError(
-          "Puter SDK failed to load via NPM. Please run: npm install @heyputer/puter.js"
-        );
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, []);
-
   const ensurePuter = async () => {
-    if (puter) return puter;
-
-    // last attempt if state not set yet
-    const mod = await import("@heyputer/puter.js");
-    setPuter(mod.puter);
+    setError("");
+    const puter = await waitForPuter();
+    if (!puter) {
+      setPuterReady(false);
+      throw new Error(
+        "Puter SDK not found. Make sure you added this in index.html:\n<script src=\"https://js.puter.com/v2/?v=2\" defer></script>"
+      );
+    }
     setPuterReady(true);
-    return mod.puter;
+    return puter;
   };
 
   const signInWithPuter = async () => {
     setError("");
-    const p = await ensurePuter();
+    const puter = await ensurePuter();
 
-    if (p?.ui?.authenticateWithPuter) {
-      await p.ui.authenticateWithPuter();
+    if (puter?.ui?.authenticateWithPuter) {
+      await puter.ui.authenticateWithPuter();
       setSignedIn(true);
       return;
     }
-    if (p?.auth?.signIn) {
-      await p.auth.signIn();
+    if (puter?.auth?.signIn) {
+      await puter.auth.signIn();
       setSignedIn(true);
       return;
     }
+
     throw new Error("Puter sign-in method not available.");
   };
 
   const signOutFromPuter = async () => {
     setError("");
-    const p = await ensurePuter();
+    const puter = await ensurePuter();
     try {
-      if (p?.auth?.signOut) await p.auth.signOut();
+      if (puter?.auth?.signOut) await puter.auth.signOut();
     } finally {
       setSignedIn(false);
     }
   };
 
-  const maybeFetchUrlText = async (p, raw) => {
+  const maybeFetchUrlText = async (puter, raw) => {
     const trimmed = raw.trim();
 
     // Upwork mode: URL fetching disabled
@@ -146,21 +131,11 @@ export default function AIWriterPuterPermanent() {
       return { sourceText: trimmed.slice(0, 12000), fetchedFromUrl: false };
     }
 
-    // Prefer Puter net.fetch (better than normal fetch for many sites)
-    if (p?.net?.fetch) {
-      const res = await p.net.fetch(trimmed);
-      const html = await res.text();
-      const text = htmlToReadableText(html);
-      return {
-        sourceText: `URL: ${trimmed}\n\nPAGE TEXT:\n${text.slice(0, 12000)}`,
-        fetchedFromUrl: true,
-      };
-    }
-
-    // Fallback (may fail due to site CORS)
-    const res = await fetch(trimmed);
+    // Puter net.fetch is CORS-free (but requires SDK working properly)
+    const res = await puter.net.fetch(trimmed);
     const html = await res.text();
     const text = htmlToReadableText(html);
+
     return {
       sourceText: `URL: ${trimmed}\n\nPAGE TEXT:\n${text.slice(0, 12000)}`,
       fetchedFromUrl: true,
@@ -223,6 +198,7 @@ ${common}
       };
     }
 
+    // upwork
     return {
       system: "You are an Upwork proposal writer. Write concise, specific proposals in simple English matching the client needs.",
       user: `
@@ -275,23 +251,6 @@ ${common}
     };
   };
 
-  const chatWithFallback = async (p, messages, opts) => {
-    try {
-      // Note: docs example shows puter.ai.chat(text, opts). :contentReference[oaicite:2]{index=2}
-      // Your existing signature also works in many builds; keep it but handle failures.
-      return await p.ai.chat(messages, false, opts);
-    } catch (e1) {
-      try {
-        const retryOpts = { ...opts };
-        if (FALLBACK_MODEL) retryOpts.model = FALLBACK_MODEL;
-        else delete retryOpts.model;
-        return await p.ai.chat(messages, false, retryOpts);
-      } catch (e2) {
-        throw new Error(`Puter AI error.\n\n${stringifyError(e1)}\n\n${stringifyError(e2)}`);
-      }
-    }
-  };
-
   const runAI = async () => {
     setError("");
     setOutput("");
@@ -305,42 +264,47 @@ ${common}
 
     setLoading(true);
     try {
-      const p = await ensurePuter();
+      const puter = await ensurePuter();
 
       if (!signedIn) {
         await signInWithPuter();
       }
 
-      const { sourceText } = await maybeFetchUrlText(p, trimmed);
+      const { sourceText } = await maybeFetchUrlText(puter, trimmed);
       const { system, user, maxTokens } = buildPrompts(sourceText);
 
-      const messages = [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ];
-
-      const resp = await chatWithFallback(p, messages, {
-        model: modelUsed,
-        temperature: 0.6,
-        max_tokens: maxTokens,
-      });
+      const resp = await puter.ai.chat(
+        [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+        false,
+        {
+          model: modelUsed,
+          temperature: 0.6,
+          max_tokens: maxTokens,
+        }
+      );
 
       let text = extractChatText(resp);
       if (!text) throw new Error("Empty response from AI. Please try again.");
 
-      // Article word count enforce once
+      // Article strict word count fix once
       if (mode === "article") {
         const wc = wordCount(text);
         if (wc < 800 || wc > 1000) {
-          const fixMessages = [
-            { role: "system", content: system },
-            { role: "user", content: `Rewrite the article to be STRICTLY 800–1000 words. Keep exact structure. Here is draft:\n\n${text}` },
-          ];
-          const resp2 = await chatWithFallback(p, fixMessages, {
-            model: modelUsed,
-            temperature: 0.4,
-            max_tokens: 1900,
-          });
+          const resp2 = await puter.ai.chat(
+            [
+              { role: "system", content: system },
+              {
+                role: "user",
+                content: `Rewrite the article to be STRICTLY 800–1000 words. Keep exact structure. Here is draft:\n\n${text}`,
+              },
+            ],
+            false,
+            { model: modelUsed, temperature: 0.4, max_tokens: 1900 }
+          );
+
           const fixed = extractChatText(resp2);
           if (fixed) text = fixed;
         }
@@ -373,6 +337,7 @@ ${common}
               (Free Write) Article • LinkedIn • Upwork
             </h1>
           </div>
+
           <p className="text-gray-600">Provide Your Idea</p>
 
           {mode !== "upwork" && (
@@ -388,7 +353,7 @@ ${common}
           <div className="text-sm text-gray-700">
             <div className="flex items-center gap-2">
               <span className={`inline-block w-2.5 h-2.5 rounded-full ${puterReady ? "bg-green-500" : "bg-gray-300"}`} />
-              <span>Status: {puterReady ? "Loaded" : "Loading..."}</span>
+              <span>Status: {puterReady ? "Loaded" : "Not loaded"}</span>
             </div>
             <div className="flex items-center gap-2 mt-1">
               <span className={`inline-block w-2.5 h-2.5 rounded-full ${signedIn ? "bg-green-500" : "bg-gray-300"}`} />
@@ -412,7 +377,13 @@ ${common}
             </button>
 
             <button
-              onClick={signOutFromPuter}
+              onClick={async () => {
+                try {
+                  await signOutFromPuter();
+                } catch (e) {
+                  setError(stringifyError(e));
+                }
+              }}
               className="inline-flex items-center gap-2 text-sm bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg transition-colors font-medium border"
             >
               <LogOut className="w-4 h-4" />
@@ -432,6 +403,7 @@ ${common}
             >
               Article (SEO)
             </button>
+
             <button
               onClick={() => setMode("linkedin")}
               className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
@@ -440,6 +412,7 @@ ${common}
             >
               LinkedIn Post
             </button>
+
             <button
               onClick={() => setMode("upwork")}
               className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
@@ -466,6 +439,7 @@ ${common}
             className="w-full h-44 p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-all text-gray-700"
           />
 
+          {/* Upwork optional fields */}
           {mode === "upwork" && (
             <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
@@ -507,7 +481,7 @@ ${common}
 
           <button
             onClick={runAI}
-            disabled={loading || !puterReady}
+            disabled={loading}
             className="mt-4 w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-400 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-[1.02] disabled:scale-100 flex items-center justify-center gap-3 shadow-lg disabled:shadow-none"
           >
             {loading ? (
@@ -564,7 +538,9 @@ ${common}
               </button>
             </div>
 
-            <div className="whitespace-pre-wrap text-gray-700 leading-relaxed text-base">{output}</div>
+            <div className="prose prose-lg max-w-none">
+              <div className="whitespace-pre-wrap text-gray-700 leading-relaxed text-base">{output}</div>
+            </div>
           </div>
         )}
       </div>
