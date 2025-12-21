@@ -20,7 +20,7 @@ import AIArticleWriter from './component/AIArticleWriter.jsx';
 
 createRoot(document.getElementById('root')).render(
   <>
-  {/* <SplashCursor/> */}
+  <SplashCursor/>
   <SpeedInsights />
   <Header/>
   <Herosection/>
