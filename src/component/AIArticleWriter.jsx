@@ -326,7 +326,7 @@ ${common}
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 p-4 sm:p-6">
+    <div className="min-h-screen bg-[#FEFDF8] p-4 sm:p-6">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-3 mb-3">
