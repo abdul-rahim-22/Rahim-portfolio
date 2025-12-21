@@ -13,6 +13,7 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import SplashCursor from './component/cursor.jsx'
 import Footer from './component/footer.jsx'
 import Processs from './component/porcess.jsx'
+import AIArticleWriter from './component/AIArticleWriter.jsx';
 
 
 
@@ -30,6 +31,7 @@ createRoot(document.getElementById('root')).render(
   <Portfolio2/>
   <Portfolio/>
   <Processs/>
+  <AIArticleWriter/>
   <Footer/>
   </>
  
