@@ -16,6 +16,8 @@ import {
   List,
   ListOrdered,
   AlignLeft,
+  AlignCenter,
+  AlignRight,
   Undo,
   Redo,
   Save,
@@ -29,10 +31,6 @@ const PRIMARY_MODEL = "gpt-4o-mini";
 function isProbablyUrl(text) {
   const t = text.trim();
   return /^https?:\/\/\S+$/i.test(t);
-}
-
-function wordCount(text) {
-  return (text || "").trim().split(/\s+/).filter(Boolean).length;
 }
 
 function htmlToReadableText(html) {
@@ -95,8 +93,9 @@ export default function AIWriterPuterStable() {
   const editorRef = useRef(null);
 
   useEffect(() => {
-    if (output) {
+    if (output && editorRef.current) {
       const htmlContent = output.replace(/\n/g, '<br>');
+      editorRef.current.innerHTML = htmlContent;
       setEditorContent(htmlContent);
       setHistory([htmlContent]);
       setHistoryIndex(0);
@@ -168,38 +167,6 @@ export default function AIWriterPuterStable() {
   const buildPrompts = (sourceText) => {
     const common =
       "Write in simple, natural English that feels human. Avoid fluff and repetition. Output in clean format. Return ONLY the final result.";
-
-    if (mode === "article") {
-      return {
-        system:
-          "You are a professional SEO editor and web article writer. You follow strict structure and word count. Keep it simple and human.",
-        user: `
-Topic / source:
-${sourceText}
-
-Requirements (STRICT):
-- Length: 800 to 1000 words (strict)
-- Structure:
-  1) Title
-  2) Hooking introduction (2-3 short paragraphs)
-  3) 3 to 5 headings with concise paragraphs
-  4) 3-6 bullet takeaways (practical)
-  5) Strong conclusion (2-4 lines)
-- Clarity: Simple English, easy to read
-- No filler. No unnecessary repetition.
-
-SEO:
-- Choose ONE primary keyword phrase and use it naturally in:
-  - Title
-  - first 120 words
-  - at least 2 headings
-- Add related keywords naturally (no stuffing).
-
-${common}
-`,
-        maxTokens: 1800,
-      };
-    }
 
     if (mode === "linkedin") {
       return {
@@ -311,26 +278,6 @@ ${common}
       let text = extractChatText(resp);
       if (!text) throw new Error("Empty response from AI. Please try again.");
 
-      if (mode === "article") {
-        const wc = wordCount(text);
-        if (wc < 800 || wc > 1000) {
-          const resp2 = await puter.ai.chat(
-            [
-              { role: "system", content: system },
-              {
-                role: "user",
-                content: `Rewrite the article to be STRICTLY 800–1000 words. Keep exact structure. Here is draft:\n\n${text}`,
-              },
-            ],
-            false,
-            { model: PRIMARY_MODEL, temperature: 0.4, max_tokens: 1900 }
-          );
-
-          const fixed = extractChatText(resp2);
-          if (fixed) text = fixed;
-        }
-      }
-
       setOutput(text);
     } catch (e) {
       setError(stringifyError(e));
@@ -347,8 +294,12 @@ ${common}
   };
 
   const execCommand = (command, value = null) => {
+    if (!editorRef.current) return;
+    editorRef.current.focus();
     document.execCommand(command, false, value);
-    setTimeout(updateHistory, 0);
+    setTimeout(() => {
+      updateHistory();
+    }, 100);
   };
 
   const updateHistory = () => {
@@ -358,6 +309,7 @@ ${common}
     newHistory.push(content);
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
+    setEditorContent(content);
   };
 
   const undo = () => {
@@ -366,6 +318,7 @@ ${common}
       setHistoryIndex(newIndex);
       if (editorRef.current) {
         editorRef.current.innerHTML = history[newIndex];
+        setEditorContent(history[newIndex]);
       }
     }
   };
@@ -376,6 +329,7 @@ ${common}
       setHistoryIndex(newIndex);
       if (editorRef.current) {
         editorRef.current.innerHTML = history[newIndex];
+        setEditorContent(history[newIndex]);
       }
     }
   };
@@ -410,7 +364,7 @@ ${common}
 
   const copyEditorContent = async () => {
     try {
-      const text = editorRef.current?.innerText || editorContent;
+      const text = editorRef.current?.innerText || editorContent.replace(/<[^>]*>/g, '');
       await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -432,7 +386,7 @@ ${common}
               AI Content Writer
             </h1>
           </div>
-          <p className="text-gray-600 text-lg">Create Articles, LinkedIn Posts & Upwork Proposals</p>
+          <p className="text-gray-600 text-lg">Create LinkedIn Posts & Upwork Proposals</p>
           {mode !== "upwork" && (
             <p className="text-xs text-gray-500 mt-2 flex items-center justify-center gap-2">
               <LinkIcon className="w-4 h-4" />
@@ -488,16 +442,6 @@ ${common}
         {/* Mode Selection */}
         <div className="bg-white rounded-2xl shadow-xl p-4 mb-6 border border-gray-100">
           <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setMode("article")}
-              className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                mode === "article" 
-                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md" 
-                  : "bg-gray-50 hover:bg-gray-100 text-gray-700"
-              }`}
-            >
-              📄 Article (SEO)
-            </button>
             <button
               onClick={() => setMode("linkedin")}
               className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
@@ -642,12 +586,29 @@ ${common}
               >
                 <ListOrdered className="w-4 h-4" />
               </button>
+              
+              <div className="w-px h-6 bg-gray-300 mx-1" />
+              
               <button
                 onClick={() => execCommand("justifyLeft")}
                 className="p-2 hover:bg-purple-100 rounded-lg transition"
                 title="Align Left"
               >
                 <AlignLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => execCommand("justifyCenter")}
+                className="p-2 hover:bg-purple-100 rounded-lg transition"
+                title="Align Center"
+              >
+                <AlignCenter className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => execCommand("justifyRight")}
+                className="p-2 hover:bg-purple-100 rounded-lg transition"
+                title="Align Right"
+              >
+                <AlignRight className="w-4 h-4" />
               </button>
               
               <div className="w-px h-6 bg-gray-300 mx-1" />
@@ -697,8 +658,8 @@ ${common}
                 contentEditable
                 suppressContentEditableWarning
                 onInput={updateHistory}
-                className="w-full min-h-[250px] p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none text-gray-700 leading-relaxed bg-white"
-                dangerouslySetInnerHTML={{ __html: editorContent }}
+                className="w-full min-h-[250px] p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none text-gray-700 leading-relaxed bg-white text-left"
+                style={{ textAlign: 'left' }}
               />
             </div>
 
@@ -769,7 +730,8 @@ ${common}
 
                   {/* Post Content */}
                   <div
-                    className="prose prose-sm max-w-none text-gray-800 leading-relaxed mb-4"
+                    className="prose prose-sm max-w-none text-gray-800 leading-relaxed mb-4 text-left"
+                    style={{ textAlign: 'left' }}
                     dangerouslySetInnerHTML={{ __html: editorRef.current?.innerHTML || editorContent }}
                   />
 
@@ -784,10 +746,6 @@ ${common}
 
                   {/* Action Buttons */}
                   <div className="grid grid-cols-4 gap-2 pt-3">
-                    <button className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-gray-600 hover:bg-gray-50 py-2 rounded-lg transition text-xs sm:text-sm">
-                      <span className="text-lg sm:text-base">👍</span>
-                      <span>Like</span>
-                    </button>
                     <button className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-gray-600 hover:bg-gray-50 py-2 rounded-lg transition text-xs sm:text-sm">
                       <span className="text-lg sm:text-base">💬</span>
                       <span>Comment</span>
@@ -809,4 +767,8 @@ ${common}
       </div>
     </div>
   );
-}
+}-600 hover:bg-gray-50 py-2 rounded-lg transition text-xs sm:text-sm">
+                      <span className="text-lg sm:text-base">👍</span>
+                      <span>Like</span>
+                    </button>
+                    <button className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-gray
