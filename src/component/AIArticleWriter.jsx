@@ -32,6 +32,10 @@ import {
   Minimize2,
   Edit3,
   Save,
+  Heart,
+  Repeat2,
+  Share,
+  MoreHorizontal,
 } from "lucide-react";
 
 const PRIMARY_MODEL = "gpt-4o-mini";
@@ -285,92 +289,124 @@ Use emojis naturally. Make it authentic and valuable.
     }
   };
 
-  // Format the post preview
+  // Format the post preview - SAME FOR DESKTOP AND MOBILE
   const formatPostPreview = () => {
     const content = editedOutput || output;
-    if (!content) return null;
-
-    const lines = content.split('\n').filter(line => line.trim());
+    const hasContent = content && content.trim().length > 0;
     
     return (
-      <div className={`${viewMode === 'mobile' ? 'max-w-sm mx-auto' : ''}`}>
-        {/* LinkedIn Post Header */}
-        <div className="flex items-start gap-3 p-4 border-b border-gray-200">
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-            AR
+      <div className={`${viewMode === 'mobile' ? 'max-w-sm' : ''} bg-white rounded-xl border border-gray-300 overflow-hidden`}>
+        {/* LinkedIn Post Header - EXACT SAME */}
+        <div className="flex items-start gap-3 p-4">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
+            FP
           </div>
-          <div>
-            <div className="font-semibold text-gray-800">Fernando Pessagno</div>
-            <div className="text-sm text-gray-600">Founder at alCarousels, the first AI Carousel Generator</div>
-            <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
-              <span>12h • 🌍</span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-semibold text-gray-900 text-sm">Fernando Pessagno</div>
+                <div className="text-gray-600 text-xs">Founder at aiCarousels, the first AI Carousel Generator</div>
+              </div>
+              <MoreHorizontal className="w-4 h-4 text-gray-400" />
+            </div>
+            <div className="flex items-center gap-2 text-gray-500 text-xs mt-1">
+              <span>12h</span>
+              <span>•</span>
               <span className="flex items-center gap-1">
-                <Eye className="w-3 h-3" />
-                1.2K views
+                <span>🌍</span>
+                <span>Public</span>
               </span>
             </div>
           </div>
         </div>
 
-        {/* Post Content */}
-        <div className="p-4">
-          <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
-            {lines.map((line, index) => {
-              if (line.includes('✓') || line.includes('•')) {
-                return (
-                  <div key={index} className="flex items-start gap-2 mb-2">
-                    <span className="text-green-600 mt-1">
-                      {line.includes('✓') ? '✓' : '•'}
-                    </span>
-                    <span>{line.replace(/[✓•]/g, '').trim()}</span>
-                  </div>
-                );
-              }
-              return (
-                <p key={index} className="mb-3 last:mb-0">
-                  {line}
-                </p>
-              );
-            })}
+        {/* Post Content - EXACT SAME */}
+        <div className="px-4 pb-3">
+          <div className="whitespace-pre-wrap text-gray-900 text-sm leading-relaxed">
+            {hasContent ? (
+              content.split('\n').map((line, index) => {
+                if (line.includes('✓')) {
+                  return (
+                    <div key={index} className="flex items-start gap-2 mb-1">
+                      <span className="text-green-600 mt-0.5">✓</span>
+                      <span>{line.replace('✓', '').trim()}</span>
+                    </div>
+                  );
+                } else if (line.includes('•')) {
+                  return (
+                    <div key={index} className="flex items-start gap-2 mb-1">
+                      <span className="text-gray-500 mt-0.5">•</span>
+                      <span>{line.replace('•', '').trim()}</span>
+                    </div>
+                  );
+                } else if (line.trim().startsWith('#') || line.trim() === '') {
+                  return (
+                    <div key={index} className="mb-1">
+                      {line}
+                    </div>
+                  );
+                } else {
+                  return (
+                    <p key={index} className="mb-2 last:mb-0">
+                      {line}
+                    </p>
+                  );
+                }
+              })
+            ) : (
+              <div className="text-gray-400 italic">
+                Write Your Post
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Post Stats */}
+        {/* Stats Section - EXACT SAME */}
         <div className="px-4 py-3 border-t border-gray-200">
-          <div className="flex items-center gap-4 text-sm text-gray-600">
-            <div className="text-center">
-              <div className="font-bold text-gray-800">64</div>
-              <div className="text-xs text-gray-500">likes</div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1">
+                <span className="text-gray-600 text-xs">64</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-gray-600 text-xs">27 comments</span>
+                <span className="text-gray-400">·</span>
+                <span className="text-gray-600 text-xs">4 reposts</span>
+              </div>
             </div>
-            <div className="text-center">
-              <div className="font-bold text-gray-800">27</div>
-              <div className="text-xs text-gray-500">comments</div>
-            </div>
-            <div className="text-center">
-              <div className="font-bold text-gray-800">4</div>
-              <div className="text-xs text-gray-500">reposts</div>
+            <div className="text-gray-400 text-xs">
+              <Eye className="w-3 h-3 inline mr-1" />
+              1.2K views
             </div>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="px-4 py-3 border-t border-gray-200">
-          <div className="flex items-center justify-around">
-            <button className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg hover:bg-gray-100 text-gray-700">
-              <span className="text-gray-500 text-lg">👍</span>
-              <span className="text-xs">Like</span>
+        {/* Action Buttons - EXACT SAME */}
+        <div className="border-t border-gray-200">
+          <div className="grid grid-cols-4 divide-x divide-gray-200">
+            <button className="flex flex-col items-center justify-center py-3 hover:bg-gray-50 transition-colors">
+              <div className="flex items-center gap-1">
+                <span className="text-gray-500">👍</span>
+              </div>
+              <span className="text-xs text-gray-600 mt-1">Like</span>
             </button>
-            <button className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg hover:bg-gray-100 text-gray-700">
-              <MessageSquare className="w-5 h-5 text-gray-500" />
-              <span className="text-xs">Comment</span>
+            <button className="flex flex-col items-center justify-center py-3 hover:bg-gray-50 transition-colors">
+              <div className="flex items-center gap-1">
+                <MessageSquare className="w-4 h-4 text-gray-500" />
+              </div>
+              <span className="text-xs text-gray-600 mt-1">Comment</span>
             </button>
-            <button className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg hover:bg-gray-100 text-gray-700">
-              <Send className="w-5 h-5 text-gray-500" />
-              <span className="text-xs">Share</span>
+            <button className="flex flex-col items-center justify-center py-3 hover:bg-gray-50 transition-colors">
+              <div className="flex items-center gap-1">
+                <Repeat2 className="w-4 h-4 text-gray-500" />
+              </div>
+              <span className="text-xs text-gray-600 mt-1">Share</span>
             </button>
-            <button className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg hover:bg-gray-100 text-gray-700">
-              <span className="text-gray-500 text-lg">📤</span>
-              <span className="text-xs">Send</span>
+            <button className="flex flex-col items-center justify-center py-3 hover:bg-gray-50 transition-colors">
+              <div className="flex items-center gap-1">
+                <Send className="w-4 h-4 text-gray-500" />
+              </div>
+              <span className="text-xs text-gray-600 mt-1">Send</span>
             </button>
           </div>
         </div>
@@ -382,7 +418,7 @@ Use emojis naturally. Make it authentic and valuable.
   const renderLinkedInIdeas = () => {
     return (
       <div className="space-y-6">
-        <div className="bg-white border border-gray-300 rounded-lg p-5">
+        <div className="bg-white border border-gray-300 rounded-xl p-5">
           <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
             <Lightbulb className="w-5 h-5 text-yellow-600" />
             LinkedIn Post Ideas Generator
@@ -417,7 +453,7 @@ Use emojis naturally. Make it authentic and valuable.
   const renderUpworkProposal = () => {
     return (
       <div className="space-y-6">
-        <div className="bg-white border border-gray-300 rounded-lg p-5">
+        <div className="bg-white border border-gray-300 rounded-xl p-5">
           <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
             <Briefcase className="w-5 h-5 text-gray-700" />
             Upwork Proposal Generator
@@ -552,7 +588,7 @@ Use emojis naturally. Make it authentic and valuable.
               </div>
 
               {/* Input Section */}
-              <div className="bg-white border border-gray-300 rounded-lg p-5 mb-6">
+              <div className="bg-white border border-gray-300 rounded-xl p-5 mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-3">
                   Write Your Post Idea
                 </label>
@@ -600,7 +636,7 @@ Use emojis naturally. Make it authentic and valuable.
               </div>
 
               {/* Live Editor */}
-              <div className="bg-white border border-gray-300 rounded-lg">
+              <div className="bg-white border border-gray-300 rounded-xl mb-6">
                 <div className="border-b border-gray-300 p-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Edit3 className="w-4 h-4 text-gray-600" />
@@ -609,7 +645,7 @@ Use emojis naturally. Make it authentic and valuable.
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setShowEditor(!showEditor)}
-                      className="p-1 hover:bg-gray-100 rounded"
+                      className="p-1 hover:bg-gray-100 rounded text-sm text-gray-600"
                     >
                       {showEditor ? 'Hide' : 'Show'}
                     </button>
@@ -712,7 +748,7 @@ Use emojis naturally. Make it authentic and valuable.
 
               {/* Copy Section */}
               {(output || editedOutput) && (
-                <div className="mt-6 bg-white border border-gray-300 rounded-lg p-5">
+                <div className="bg-white border border-gray-300 rounded-xl p-5 mb-6">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-semibold text-gray-800">Copy to Clipboard</h3>
                     <button
@@ -737,7 +773,7 @@ Use emojis naturally. Make it authentic and valuable.
               )}
 
               {/* Auth Status */}
-              <div className="mt-6 bg-white border border-gray-300 rounded-lg p-4">
+              <div className="bg-white border border-gray-300 rounded-xl p-4">
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-gray-600">
                     <div className="flex items-center gap-2">
@@ -771,56 +807,42 @@ Use emojis naturally. Make it authentic and valuable.
             {/* Right Column - Preview (Hidden in fullscreen) */}
             {!isFullscreen && (
               <div>
-                <div className="bg-white border border-gray-300 rounded-lg p-5">
+                <div className="bg-white border border-gray-300 rounded-xl p-5">
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="font-semibold text-gray-800">Post Preview</h3>
+                    <h3 className="font-semibold text-gray-800 text-lg">Post Preview</h3>
                     <div className="flex gap-2">
                       <button
                         onClick={() => setViewMode("desktop")}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
+                        className={`px-3 py-2 rounded-lg text-sm font-medium ${
                           viewMode === "desktop" 
                             ? "bg-black text-white" 
                             : "bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200"
                         }`}
                       >
-                        <Monitor className="w-4 h-4" />
                         Desktop
                       </button>
                       <button
                         onClick={() => setViewMode("mobile")}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
+                        className={`px-3 py-2 rounded-lg text-sm font-medium ${
                           viewMode === "mobile" 
                             ? "bg-black text-white" 
                             : "bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200"
                         }`}
                       >
-                        <Smartphone className="w-4 h-4" />
                         Mobile
                       </button>
                     </div>
                   </div>
 
-                  {(output || editedOutput) ? (
-                    <div className="border border-gray-300 rounded-lg overflow-hidden">
-                      {formatPostPreview()}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <ImageIcon className="w-8 h-8 text-gray-400" />
-                      </div>
-                      <h4 className="text-lg font-semibold text-gray-700 mb-2">Post Preview</h4>
-                      <p className="text-gray-500">
-                        Generated post will appear here
-                      </p>
-                      <div className="mt-6 grid grid-cols-2 gap-2">
-                        <div className="h-32 bg-gray-100 rounded-lg"></div>
-                        {mode === "advanced" && (
-                          <div className="h-32 bg-gray-100 rounded-lg"></div>
-                        )}
-                      </div>
-                    </div>
-                  )}
+                  {/* Preview Container */}
+                  <div className={`${viewMode === 'mobile' ? 'flex justify-center' : ''}`}>
+                    {formatPostPreview()}
+                  </div>
+
+                  {/* Preview Note */}
+                  <div className="mt-4 text-sm text-gray-500 text-center">
+                    {viewMode === 'mobile' ? 'Mobile Preview (375px width)' : 'Desktop Preview'}
+                  </div>
                 </div>
               </div>
             )}
@@ -833,7 +855,7 @@ Use emojis naturally. Make it authentic and valuable.
 
         {/* Bottom CTA */}
         <div className="mt-8 text-center">
-          <div className="bg-white border border-gray-300 rounded-lg p-5 inline-block">
+          <div className="bg-white border border-gray-300 rounded-xl p-5 inline-block">
             <p className="text-gray-700 mb-3">Need help improving your content?</p>
             <div className="flex flex-wrap gap-2 justify-center">
               <button className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg border border-gray-300 text-sm">
