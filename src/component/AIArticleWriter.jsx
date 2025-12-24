@@ -1,5 +1,4 @@
-
-import React, { useMemo, useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Loader2,
   Sparkles,
@@ -11,6 +10,18 @@ import {
   LogOut,
   FileText,
   Briefcase,
+  Bold,
+  Italic,
+  Underline,
+  List,
+  ListOrdered,
+  AlignLeft,
+  Undo,
+  Redo,
+  Save,
+  FolderOpen,
+  Monitor,
+  Smartphone,
 } from "lucide-react";
 
 const PRIMARY_MODEL = "gpt-4o-mini";
@@ -64,7 +75,7 @@ async function waitForPuter(timeoutMs = 8000) {
 }
 
 export default function AIWriterPuterStable() {
-  const [mode, setMode] = useState("article"); // article | linkedin | upwork
+  const [mode, setMode] = useState("linkedin");
   const [input, setInput] = useState("");
   const [experience, setExperience] = useState("");
   const [portfolioLinks, setPortfolioLinks] = useState("");
@@ -77,7 +88,20 @@ export default function AIWriterPuterStable() {
   const [signedIn, setSignedIn] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const modelUsed = useMemo(() => PRIMARY_MODEL, []);
+  const [editorContent, setEditorContent] = useState("");
+  const [previewMode, setPreviewMode] = useState("desktop");
+  const [history, setHistory] = useState([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const editorRef = useRef(null);
+
+  useEffect(() => {
+    if (output) {
+      const htmlContent = output.replace(/\n/g, '<br>');
+      setEditorContent(htmlContent);
+      setHistory([htmlContent]);
+      setHistoryIndex(0);
+    }
+  }, [output]);
 
   const ensurePuter = async () => {
     setError("");
@@ -85,7 +109,7 @@ export default function AIWriterPuterStable() {
     if (!puter) {
       setPuterReady(false);
       throw new Error(
-        "Puter SDK not found. Make sure you added this in index.html:\n<script src=\"https://js.puter.com/v2/?v=2\" defer></script>"
+        'Puter SDK not found. Make sure you added this in index.html:\n<script src="https://js.puter.com/v2/?v=2" defer></script>'
       );
     }
     setPuterReady(true);
@@ -123,7 +147,6 @@ export default function AIWriterPuterStable() {
   const maybeFetchUrlText = async (puter, raw) => {
     const trimmed = raw.trim();
 
-    // Upwork mode: URL fetching disabled
     if (mode === "upwork") {
       return { sourceText: trimmed.slice(0, 12000), fetchedFromUrl: false };
     }
@@ -132,7 +155,6 @@ export default function AIWriterPuterStable() {
       return { sourceText: trimmed.slice(0, 12000), fetchedFromUrl: false };
     }
 
-    // Puter net.fetch is CORS-free (but requires SDK working properly)
     const res = await puter.net.fetch(trimmed);
     const html = await res.text();
     const text = htmlToReadableText(html);
@@ -145,7 +167,7 @@ export default function AIWriterPuterStable() {
 
   const buildPrompts = (sourceText) => {
     const common =
-      "Write in simple, natural English that feels human. Avoid fluff and repetition. Output in clean Markdown. Return ONLY the final result.";
+      "Write in simple, natural English that feels human. Avoid fluff and repetition. Output in clean format. Return ONLY the final result.";
 
     if (mode === "article") {
       return {
@@ -199,7 +221,6 @@ ${common}
       };
     }
 
-    // upwork
     return {
       system: "You are an Upwork proposal writer. Write concise, specific proposals in simple English matching the client needs.",
       user: `
@@ -281,7 +302,7 @@ ${common}
         ],
         false,
         {
-          model: modelUsed,
+          model: PRIMARY_MODEL,
           temperature: 0.6,
           max_tokens: maxTokens,
         }
@@ -290,7 +311,6 @@ ${common}
       let text = extractChatText(resp);
       if (!text) throw new Error("Empty response from AI. Please try again.");
 
-      // Article strict word count fix once
       if (mode === "article") {
         const wc = wordCount(text);
         if (wc < 800 || wc > 1000) {
@@ -303,7 +323,7 @@ ${common}
               },
             ],
             false,
-            { model: modelUsed, temperature: 0.4, max_tokens: 1900 }
+            { model: PRIMARY_MODEL, temperature: 0.4, max_tokens: 1900 }
           );
 
           const fixed = extractChatText(resp2);
@@ -326,151 +346,230 @@ ${common}
     }
   };
 
+  const execCommand = (command, value = null) => {
+    document.execCommand(command, false, value);
+    setTimeout(updateHistory, 0);
+  };
+
+  const updateHistory = () => {
+    if (!editorRef.current) return;
+    const content = editorRef.current.innerHTML;
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(content);
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+  };
+
+  const undo = () => {
+    if (historyIndex > 0) {
+      const newIndex = historyIndex - 1;
+      setHistoryIndex(newIndex);
+      if (editorRef.current) {
+        editorRef.current.innerHTML = history[newIndex];
+      }
+    }
+  };
+
+  const redo = () => {
+    if (historyIndex < history.length - 1) {
+      const newIndex = historyIndex + 1;
+      setHistoryIndex(newIndex);
+      if (editorRef.current) {
+        editorRef.current.innerHTML = history[newIndex];
+      }
+    }
+  };
+
+  const saveContent = async () => {
+    try {
+      const puter = await ensurePuter();
+      const content = editorRef.current?.innerHTML || editorContent;
+      await puter.kv.set(`ai-writer-${mode}-draft`, content);
+      alert("Content saved successfully!");
+    } catch (e) {
+      setError("Failed to save: " + stringifyError(e));
+    }
+  };
+
+  const loadContent = async () => {
+    try {
+      const puter = await ensurePuter();
+      const saved = await puter.kv.get(`ai-writer-${mode}-draft`);
+      if (saved && editorRef.current) {
+        editorRef.current.innerHTML = saved;
+        setEditorContent(saved);
+        updateHistory();
+        alert("Content loaded successfully!");
+      } else {
+        alert("No saved content found for this mode.");
+      }
+    } catch (e) {
+      setError("Failed to load: " + stringifyError(e));
+    }
+  };
+
+  const copyEditorContent = async () => {
+    try {
+      const text = editorRef.current?.innerText || editorContent;
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setError("Copy failed. Please manually select and copy.");
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#EFFDE8] p-4 sm:p-6">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50 p-4 sm:p-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
         <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-3 mb-3">
             <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl shadow-lg">
               <Sparkles className="w-7 h-7 text-white" />
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-              (Free Write) Article • LinkedIn • Upwork
+              AI Content Writer
             </h1>
           </div>
-
-          <p className="text-gray-600">Provide Your Idea</p>
-
+          <p className="text-gray-600 text-lg">Create Articles, LinkedIn Posts & Upwork Proposals</p>
           {mode !== "upwork" && (
             <p className="text-xs text-gray-500 mt-2 flex items-center justify-center gap-2">
               <LinkIcon className="w-4 h-4" />
-              Paste a public URL to auto-fetch page text.
+              Paste a public URL to auto-fetch content
             </p>
           )}
         </div>
 
-        {/* Auth bar */}
-        <div className="bg-white rounded-2xl shadow-xl p-4 mb-6 border border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="text-sm text-gray-700">
-            <div className="flex items-center gap-2">
-              <span className={`inline-block w-2.5 h-2.5 rounded-full ${puterReady ? "bg-green-500" : "bg-gray-300"}`} />
-              <span>Status: {puterReady ? "Loaded" : "Not loaded"}</span>
+        {/* Auth Status */}
+        <div className="bg-white rounded-2xl shadow-xl p-4 mb-6 border border-gray-100">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="text-sm text-gray-700">
+              <div className="flex items-center gap-2">
+                <span className={`inline-block w-2.5 h-2.5 rounded-full ${puterReady ? "bg-green-500" : "bg-gray-300"}`} />
+                <span>Puter SDK: {puterReady ? "Ready" : "Not loaded"}</span>
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <span className={`inline-block w-2.5 h-2.5 rounded-full ${signedIn ? "bg-green-500" : "bg-gray-300"}`} />
+                <span>Auth: {signedIn ? "Signed in" : "Not signed in"}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2 mt-1">
-              <span className={`inline-block w-2.5 h-2.5 rounded-full ${signedIn ? "bg-green-500" : "bg-gray-300"}`} />
-              <span>Sign-in: {signedIn ? "Signed in" : "Not signed in"}</span>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={async () => {
+                  try {
+                    await signInWithPuter();
+                  } catch (e) {
+                    setError(stringifyError(e));
+                  }
+                }}
+                className="inline-flex items-center gap-2 text-sm bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-4 py-2 rounded-lg transition-colors font-medium shadow-sm"
+              >
+                <LogIn className="w-4 h-4" />
+                Sign In
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    await signOutFromPuter();
+                  } catch (e) {
+                    setError(stringifyError(e));
+                  }
+                }}
+                className="inline-flex items-center gap-2 text-sm bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg transition-colors font-medium border"
+              >
+                <LogOut className="w-4 h-4" />
+                Sign Out
+              </button>
             </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={async () => {
-                try {
-                  await signInWithPuter();
-                } catch (e) {
-                  setError(stringifyError(e));
-                }
-              }}
-              className="inline-flex items-center gap-2 text-sm bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-4 py-2 rounded-lg transition-colors font-medium shadow-sm"
-            >
-              <LogIn className="w-4 h-4" />
-              Sign in
-            </button>
-
-            <button
-              onClick={async () => {
-                try {
-                  await signOutFromPuter();
-                } catch (e) {
-                  setError(stringifyError(e));
-                }
-              }}
-              className="inline-flex items-center gap-2 text-sm bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg transition-colors font-medium border"
-            >
-              <LogOut className="w-4 h-4" />
-              Sign out
-            </button>
           </div>
         </div>
 
-        {/* Mode tabs */}
+        {/* Mode Selection */}
         <div className="bg-white rounded-2xl shadow-xl p-4 mb-6 border border-gray-100">
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setMode("article")}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
-                mode === "article" ? "bg-purple-600 text-white" : "bg-gray-50 hover:bg-gray-100 text-gray-700"
+              className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                mode === "article" 
+                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md" 
+                  : "bg-gray-50 hover:bg-gray-100 text-gray-700"
               }`}
             >
-              Article (SEO)
+              📄 Article (SEO)
             </button>
-
             <button
               onClick={() => setMode("linkedin")}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
-                mode === "linkedin" ? "bg-purple-600 text-white" : "bg-gray-50 hover:bg-gray-100 text-gray-700"
+              className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                mode === "linkedin" 
+                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md" 
+                  : "bg-gray-50 hover:bg-gray-100 text-gray-700"
               }`}
             >
-              LinkedIn Post
+              💼 LinkedIn Post
             </button>
-
             <button
               onClick={() => setMode("upwork")}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
-                mode === "upwork" ? "bg-purple-600 text-white" : "bg-gray-50 hover:bg-gray-100 text-gray-700"
+              className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                mode === "upwork" 
+                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md" 
+                  : "bg-gray-50 hover:bg-gray-100 text-gray-700"
               }`}
             >
-              Upwork Proposal
+              💰 Upwork Proposal
             </button>
           </div>
         </div>
 
-        {/* Input */}
+        {/* Input Section */}
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border border-gray-100">
           <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-            <FileText className="w-4 h-4 text-purple-600" />
+            <FileText className="w-5 h-5 text-purple-600" />
             {mode === "upwork" ? "Client Job Description" : "Topic / URL / Source Text"}
           </label>
-
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onCtrlEnter}
-            placeholder={mode === "upwork" ? "Paste the client job description here..." : "Enter a topic OR paste a public URL OR paste source text..."}
-            className="w-full h-44 p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-all text-gray-700"
+            placeholder={
+              mode === "upwork" 
+                ? "Paste the complete client job description here..." 
+                : "Enter a topic, paste a URL, or provide source text..."
+            }
+            className="w-full h-40 p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-all text-gray-700"
           />
 
-          {/* Upwork optional fields */}
+          {/* Upwork Optional Fields */}
           {mode === "upwork" && (
             <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
                 <label className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
                   <Briefcase className="w-4 h-4 text-purple-600" />
-                  Optional: Experience (Upwork only)
+                  Your Experience (Optional)
                 </label>
                 <textarea
                   value={experience}
                   onChange={(e) => setExperience(e.target.value)}
-                  placeholder="Example: I build WordPress tools, forms, custom plugins, etc."
-                  className="w-full h-24 p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-all text-gray-700"
+                  placeholder="Example: I build WordPress sites, create custom plugins, design UI/UX..."
+                  className="w-full h-24 p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-all text-gray-700 text-sm"
                 />
               </div>
-
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
                 <label className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
                   <LinkIcon className="w-4 h-4 text-purple-600" />
-                  Optional: Portfolio links (Upwork only)
+                  Portfolio Links (Optional)
                 </label>
                 <textarea
                   value={portfolioLinks}
                   onChange={(e) => setPortfolioLinks(e.target.value)}
-                  placeholder="Paste links (one per line)."
-                  className="w-full h-24 p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-all text-gray-700"
+                  placeholder="Paste portfolio links (one per line)"
+                  className="w-full h-24 p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-all text-gray-700 text-sm"
                 />
               </div>
             </div>
           )}
 
+          {/* Error Display */}
           {error && (
             <div className="mt-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
               <div className="flex items-start gap-3">
@@ -480,6 +579,7 @@ ${common}
             </div>
           )}
 
+          {/* Generate Button */}
           <button
             onClick={runAI}
             disabled={loading}
@@ -488,59 +588,221 @@ ${common}
             {loading ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                Generating...
+                Generating with AI...
               </>
             ) : (
               <>
                 <Sparkles className="w-5 h-5" />
-                Generate
+                Generate with AI
               </>
             )}
           </button>
         </div>
 
-        {/* Output */}
+        {/* Editor and Preview Section */}
         {output && (
           <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-gray-200">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                  <Check className="w-6 h-6 text-green-600" />
-                  Output
-                </h2>
-                {mode === "article" && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Word count: <span className="font-medium">{wordCount(output)}</span>
-                  </p>
-                )}
-              </div>
-
+            {/* Toolbar */}
+            <div className="flex flex-wrap items-center gap-2 mb-4 pb-4 border-b border-gray-200">
               <button
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(output);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  } catch {
-                    setError("Copy failed. Please manually select and copy.");
-                  }
-                }}
-                className="flex items-center gap-2 text-sm bg-gradient-to-r from-purple-100 to-indigo-100 hover:from-purple-200 hover:to-indigo-200 text-purple-700 px-4 py-2.5 rounded-lg transition-all font-medium shadow-sm"
+                onClick={() => execCommand("bold")}
+                className="p-2 hover:bg-purple-100 rounded-lg transition"
+                title="Bold (Ctrl+B)"
               >
-                {copied ? (
-                  <>
-                    <Check className="w-4 h-4" /> Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-4 h-4" /> Copy
-                  </>
-                )}
+                <Bold className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => execCommand("italic")}
+                className="p-2 hover:bg-purple-100 rounded-lg transition"
+                title="Italic (Ctrl+I)"
+              >
+                <Italic className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => execCommand("underline")}
+                className="p-2 hover:bg-purple-100 rounded-lg transition"
+                title="Underline (Ctrl+U)"
+              >
+                <Underline className="w-4 h-4" />
+              </button>
+              
+              <div className="w-px h-6 bg-gray-300 mx-1" />
+              
+              <button
+                onClick={() => execCommand("insertUnorderedList")}
+                className="p-2 hover:bg-purple-100 rounded-lg transition"
+                title="Bullet List"
+              >
+                <List className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => execCommand("insertOrderedList")}
+                className="p-2 hover:bg-purple-100 rounded-lg transition"
+                title="Numbered List"
+              >
+                <ListOrdered className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => execCommand("justifyLeft")}
+                className="p-2 hover:bg-purple-100 rounded-lg transition"
+                title="Align Left"
+              >
+                <AlignLeft className="w-4 h-4" />
+              </button>
+              
+              <div className="w-px h-6 bg-gray-300 mx-1" />
+              
+              <button
+                onClick={undo}
+                disabled={historyIndex <= 0}
+                className="p-2 hover:bg-purple-100 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed"
+                title="Undo"
+              >
+                <Undo className="w-4 h-4" />
+              </button>
+              <button
+                onClick={redo}
+                disabled={historyIndex >= history.length - 1}
+                className="p-2 hover:bg-purple-100 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed"
+                title="Redo"
+              >
+                <Redo className="w-4 h-4" />
+              </button>
+              
+              <div className="flex-1" />
+              
+              <button
+                onClick={saveContent}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg transition text-sm font-medium"
+              >
+                <Save className="w-4 h-4" />
+                Save
+              </button>
+              <button
+                onClick={loadContent}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg transition text-sm font-medium"
+              >
+                <FolderOpen className="w-4 h-4" />
+                Load
               </button>
             </div>
 
-            <div className="prose prose-lg max-w-none">
-              <div className="whitespace-pre-wrap text-gray-700 leading-relaxed text-base">{output}</div>
+            {/* Editor */}
+            <div className="mb-6">
+              <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                ✏️ Write Your Post
+              </label>
+              <div
+                ref={editorRef}
+                contentEditable
+                suppressContentEditableWarning
+                onInput={updateHistory}
+                className="w-full min-h-[250px] p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none text-gray-700 leading-relaxed bg-white"
+                dangerouslySetInnerHTML={{ __html: editorContent }}
+              />
+            </div>
+
+            {/* Copy Button */}
+            <button
+              onClick={copyEditorContent}
+              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg mb-6"
+            >
+              {copied ? (
+                <>
+                  <Check className="w-5 h-5" /> Copied to Clipboard!
+                </>
+              ) : (
+                <>
+                  <Copy className="w-5 h-5" /> Copy to Clipboard
+                </>
+              )}
+            </button>
+
+            {/* Preview Section */}
+            <div className="border-t-2 border-gray-200 pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                  👁️ Post Preview
+                </h3>
+                <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+                  <button
+                    onClick={() => setPreviewMode("desktop")}
+                    className={`p-2 rounded-md transition ${
+                      previewMode === "desktop" 
+                        ? "bg-white text-purple-700 shadow-sm" 
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                    title="Desktop View"
+                  >
+                    <Monitor className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setPreviewMode("mobile")}
+                    className={`p-2 rounded-md transition ${
+                      previewMode === "mobile" 
+                        ? "bg-white text-purple-700 shadow-sm" 
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                    title="Mobile View"
+                  >
+                    <Smartphone className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* LinkedIn-style Preview */}
+              <div className={`bg-gray-100 rounded-xl p-6 transition-all ${previewMode === "mobile" ? "max-w-sm mx-auto" : ""}`}>
+                <div className="bg-white rounded-xl shadow-lg p-6">
+                  {/* Profile Header */}
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-indigo-500 flex items-center justify-center text-white font-bold text-xl shadow-md">
+                      U
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-gray-900">Your Name</h4>
+                      <p className="text-sm text-gray-600">Your Professional Title | Company</p>
+                      <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                        12h • <span className="inline-block">🌐</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Post Content */}
+                  <div
+                    className="prose prose-sm max-w-none text-gray-800 leading-relaxed mb-4"
+                    dangerouslySetInnerHTML={{ __html: editorRef.current?.innerHTML || editorContent }}
+                  />
+
+                  {/* Engagement Stats */}
+                  <div className="flex items-center justify-between text-xs text-gray-500 pb-3 border-b border-gray-200">
+                    <div className="flex items-center gap-1">
+                      <span className="text-blue-600">👍</span>
+                      <span>64</span>
+                    </div>
+                    <span>27 comments • 4 reposts</span>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="grid grid-cols-4 gap-2 pt-3">
+                    <button className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-gray-600 hover:bg-gray-50 py-2 rounded-lg transition text-xs sm:text-sm">
+                      <span className="text-lg sm:text-base">👍</span>
+                      <span>Like</span>
+                    </button>
+                    <button className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-gray-600 hover:bg-gray-50 py-2 rounded-lg transition text-xs sm:text-sm">
+                      <span className="text-lg sm:text-base">💬</span>
+                      <span>Comment</span>
+                    </button>
+                    <button className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-gray-600 hover:bg-gray-50 py-2 rounded-lg transition text-xs sm:text-sm">
+                      <span className="text-lg sm:text-base">🔁</span>
+                      <span>Share</span>
+                    </button>
+                    <button className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-gray-600 hover:bg-gray-50 py-2 rounded-lg transition text-xs sm:text-sm">
+                      <span className="text-lg sm:text-base">📤</span>
+                      <span>Send</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -548,4 +810,3 @@ ${common}
     </div>
   );
 }
-
