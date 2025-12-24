@@ -10,6 +10,8 @@ import {
   LogOut,
   FileText,
   Briefcase,
+  Lightbulb,
+  Zap,
 } from "lucide-react";
 
 const PRIMARY_MODEL = "gpt-4o-mini";
@@ -63,7 +65,7 @@ async function waitForPuter(timeoutMs = 8000) {
 }
 
 export default function AIWriterPuterStable() {
-  const [mode, setMode] = useState("article"); // article | linkedin | upwork
+  const [mode, setMode] = useState("linkedin"); // linkedin | upwork | linkedin-ideas
   const [input, setInput] = useState("");
   const [experience, setExperience] = useState("");
   const [portfolioLinks, setPortfolioLinks] = useState("");
@@ -146,38 +148,6 @@ export default function AIWriterPuterStable() {
     const common =
       "Write in simple, natural English that feels human. Avoid fluff and repetition. Output in clean Markdown. Return ONLY the final result.";
 
-    if (mode === "article") {
-      return {
-        system:
-          "You are a professional SEO editor and web article writer. You follow strict structure and word count. Keep it simple and human.",
-        user: `
-Topic / source:
-${sourceText}
-
-Requirements (STRICT):
-- Length: 800 to 1000 words (strict)
-- Structure:
-  1) Title
-  2) Hooking introduction (2-3 short paragraphs)
-  3) 3 to 5 headings with concise paragraphs
-  4) 3-6 bullet takeaways (practical)
-  5) Strong conclusion (2-4 lines)
-- Clarity: Simple English, easy to read
-- No filler. No unnecessary repetition.
-
-SEO:
-- Choose ONE primary keyword phrase and use it naturally in:
-  - Title
-  - first 120 words
-  - at least 2 headings
-- Add related keywords naturally (no stuffing).
-
-${common}
-`,
-        maxTokens: 1800,
-      };
-    }
-
     if (mode === "linkedin") {
       return {
         system: "You write LinkedIn posts in simple English. Make it scannable, practical, and human. No hype.",
@@ -195,6 +165,38 @@ Write ONE LinkedIn post with:
 ${common}
 `,
         maxTokens: 800,
+      };
+    }
+
+    if (mode === "linkedin-ideas") {
+      return {
+        system: "You are a creative LinkedIn content strategist. Generate unique, engaging LinkedIn post ideas that are creative, thought-provoking, and share-worthy.",
+        user: `
+Topic / theme / keyword:
+${sourceText}
+
+Generate EXACTLY 10 creative LinkedIn post ideas. For each idea, provide:
+
+1. **Idea Title** (Catchy, attention-grabbing)
+2. **Core Message** (What's the main takeaway?)
+3. **Hook** (Opening line that grabs attention)
+4. **Content Angle** (Unique perspective or approach)
+5. **Target Audience** (Who would find this valuable?)
+6. **Hashtag Suggestions** (3-5 relevant hashtags)
+7. **Visual Idea** (What image/video/graphic would work well?)
+8. **Engagement Prompt** (Question to ask audience)
+
+Format each idea as a numbered item with bold headings. Make ideas diverse, practical, and LinkedIn-friendly.
+
+Rules:
+- Ideas should be unique and not generic
+- Focus on value, insights, or storytelling
+- Include different formats (tips, stories, questions, lists, etc.)
+- Keep professional but human tone
+
+${common}
+`,
+        maxTokens: 2000,
       };
     }
 
@@ -258,7 +260,12 @@ ${common}
 
     const trimmed = input.trim();
     if (!trimmed) {
-      setError(mode === "upwork" ? "Please paste the client job description." : "Please enter a topic, a URL, or source text.");
+      const errorMessages = {
+        "linkedin": "Please enter an idea, a URL, or source text for LinkedIn post.",
+        "linkedin-ideas": "Please enter a topic, theme, or keyword for LinkedIn ideas.",
+        "upwork": "Please paste the client job description."
+      };
+      setError(errorMessages[mode] || "Please enter some input.");
       return;
     }
 
@@ -281,34 +288,13 @@ ${common}
         false,
         {
           model: modelUsed,
-          temperature: 0.6,
+          temperature: mode === "linkedin-ideas" ? 0.8 : 0.6,
           max_tokens: maxTokens,
         }
       );
 
       let text = extractChatText(resp);
       if (!text) throw new Error("Empty response from AI. Please try again.");
-
-      // Article strict word count fix once
-      if (mode === "article") {
-        const wc = wordCount(text);
-        if (wc < 800 || wc > 1000) {
-          const resp2 = await puter.ai.chat(
-            [
-              { role: "system", content: system },
-              {
-                role: "user",
-                content: `Rewrite the article to be STRICTLY 800–1000 words. Keep exact structure. Here is draft:\n\n${text}`,
-              },
-            ],
-            false,
-            { model: modelUsed, temperature: 0.4, max_tokens: 1900 }
-          );
-
-          const fixed = extractChatText(resp2);
-          if (fixed) text = fixed;
-        }
-      }
 
       setOutput(text);
     } catch (e) {
@@ -325,8 +311,39 @@ ${common}
     }
   };
 
+  const getTitle = () => {
+    switch(mode) {
+      case "linkedin": return "LinkedIn Post";
+      case "linkedin-ideas": return "LinkedIn Post Ideas";
+      case "upwork": return "Upwork Proposal";
+      default: return "";
+    }
+  };
+
+  const getPlaceholder = () => {
+    switch(mode) {
+      case "linkedin": 
+        return "Enter an idea OR paste a public URL OR paste source text for LinkedIn post...";
+      case "linkedin-ideas":
+        return "Enter a topic, theme, or keyword to generate creative LinkedIn post ideas (e.g., 'digital marketing', 'remote work', 'AI tools', 'career growth')...";
+      case "upwork":
+        return "Paste the client job description here...";
+      default:
+        return "";
+    }
+  };
+
+  const getInputLabel = () => {
+    switch(mode) {
+      case "linkedin": return "Idea / URL / Source Text";
+      case "linkedin-ideas": return "Topic / Theme / Keyword";
+      case "upwork": return "Client Job Description";
+      default: return "";
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 p-4 sm:p-6">
+    <div className="min-h-screen bg-[#EFFDE8] p-4 sm:p-6">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-3 mb-3">
@@ -334,16 +351,22 @@ ${common}
               <Sparkles className="w-7 h-7 text-white" />
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-              (Free Write) Article • LinkedIn • Upwork
+              (Free Write) LinkedIn • Upwork
             </h1>
           </div>
 
           <p className="text-gray-600">Provide Your Idea</p>
 
-          {mode !== "upwork" && (
+          {mode === "linkedin" && (
             <p className="text-xs text-gray-500 mt-2 flex items-center justify-center gap-2">
               <LinkIcon className="w-4 h-4" />
               Paste a public URL to auto-fetch page text.
+            </p>
+          )}
+          {mode === "linkedin-ideas" && (
+            <p className="text-xs text-gray-500 mt-2 flex items-center justify-center gap-2">
+              <Lightbulb className="w-4 h-4" />
+              Get 10 creative LinkedIn post ideas based on your topic
             </p>
           )}
         </div>
@@ -396,21 +419,27 @@ ${common}
         <div className="bg-white rounded-2xl shadow-xl p-4 mb-6 border border-gray-100">
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => setMode("article")}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
-                mode === "article" ? "bg-purple-600 text-white" : "bg-gray-50 hover:bg-gray-100 text-gray-700"
-              }`}
-            >
-              Article (SEO)
-            </button>
-
-            <button
               onClick={() => setMode("linkedin")}
               className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
                 mode === "linkedin" ? "bg-purple-600 text-white" : "bg-gray-50 hover:bg-gray-100 text-gray-700"
               }`}
             >
-              LinkedIn Post
+              <span className="flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                LinkedIn Post
+              </span>
+            </button>
+
+            <button
+              onClick={() => setMode("linkedin-ideas")}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
+                mode === "linkedin-ideas" ? "bg-purple-600 text-white" : "bg-gray-50 hover:bg-gray-100 text-gray-700"
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <Lightbulb className="w-4 h-4" />
+                LinkedIn Post Ideas
+              </span>
             </button>
 
             <button
@@ -419,7 +448,10 @@ ${common}
                 mode === "upwork" ? "bg-purple-600 text-white" : "bg-gray-50 hover:bg-gray-100 text-gray-700"
               }`}
             >
-              Upwork Proposal
+              <span className="flex items-center gap-2">
+                <Briefcase className="w-4 h-4" />
+                Upwork Proposal
+              </span>
             </button>
           </div>
         </div>
@@ -427,15 +459,17 @@ ${common}
         {/* Input */}
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border border-gray-100">
           <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-            <FileText className="w-4 h-4 text-purple-600" />
-            {mode === "upwork" ? "Client Job Description" : "Topic / URL / Source Text"}
+            {mode === "linkedin" && <FileText className="w-4 h-4 text-purple-600" />}
+            {mode === "linkedin-ideas" && <Lightbulb className="w-4 h-4 text-yellow-600" />}
+            {mode === "upwork" && <Briefcase className="w-4 h-4 text-purple-600" />}
+            {getInputLabel()}
           </label>
 
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onCtrlEnter}
-            placeholder={mode === "upwork" ? "Paste the client job description here..." : "Enter a topic OR paste a public URL OR paste source text..."}
+            placeholder={getPlaceholder()}
             className="w-full h-44 p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-all text-gray-700"
           />
 
@@ -487,12 +521,17 @@ ${common}
             {loading ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                Generating...
+                Generating {getTitle()}...
+              </>
+            ) : mode === "linkedin-ideas" ? (
+              <>
+                <Zap className="w-5 h-5" />
+                Generate 10 LinkedIn Ideas
               </>
             ) : (
               <>
                 <Sparkles className="w-5 h-5" />
-                Generate
+                Generate {getTitle()}
               </>
             )}
           </button>
@@ -505,11 +544,12 @@ ${common}
               <div>
                 <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
                   <Check className="w-6 h-6 text-green-600" />
-                  Output
+                  {getTitle()}
                 </h2>
-                {mode === "article" && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Word count: <span className="font-medium">{wordCount(output)}</span>
+                {mode === "linkedin-ideas" && (
+                  <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
+                    <Lightbulb className="w-4 h-4" />
+                    10 creative LinkedIn post ideas generated
                   </p>
                 )}
               </div>
