@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Loader2,
   Sparkles,
@@ -13,23 +13,13 @@ import {
   Lightbulb,
   Zap,
   MessageSquare,
-  TrendingUp,
-  Users,
-  Target,
-  BarChart,
-  Heart,
-  ThumbsUp,
-  Share2,
-  Eye,
-  Calendar,
-  Clock,
-  Tag,
   Image as ImageIcon,
-  Video,
-  Link2,
-  ChevronDown,
-  ChevronUp,
-  ExternalLink,
+  Smartphone,
+  Monitor,
+  Send,
+  Eye,
+  Users,
+  TrendingUp,
 } from "lucide-react";
 
 const PRIMARY_MODEL = "gpt-4o-mini";
@@ -78,20 +68,17 @@ async function waitForPuter(timeoutMs = 8000) {
   return null;
 }
 
-export default function AIWriterPuterStable() {
-  const [mode, setMode] = useState("linkedin"); // linkedin | linkedin-ideas | upwork
+export default function LinkedInPostGenerator() {
+  const [mode, setMode] = useState("basic"); // basic | advanced
   const [input, setInput] = useState("");
-  const [experience, setExperience] = useState("");
-  const [portfolioLinks, setPortfolioLinks] = useState("");
-
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [viewMode, setViewMode] = useState("desktop"); // desktop | mobile
 
   const [puterReady, setPuterReady] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [expandedIdeas, setExpandedIdeas] = useState([]);
 
   const modelUsed = useMemo(() => PRIMARY_MODEL, []);
 
@@ -136,136 +123,60 @@ export default function AIWriterPuterStable() {
     }
   };
 
-  const maybeFetchUrlText = async (puter, raw) => {
-    const trimmed = raw.trim();
-
-    if (mode === "upwork") {
-      return { sourceText: trimmed.slice(0, 12000), fetchedFromUrl: false };
-    }
-
-    if (!isProbablyUrl(trimmed)) {
-      return { sourceText: trimmed.slice(0, 12000), fetchedFromUrl: false };
-    }
-
-    const res = await puter.net.fetch(trimmed);
-    const html = await res.text();
-    const text = htmlToReadableText(html);
-
-    return {
-      sourceText: `URL: ${trimmed}\n\nPAGE TEXT:\n${text.slice(0, 12000)}`,
-      fetchedFromUrl: true,
-    };
-  };
-
-  const buildPrompts = (sourceText) => {
-    const common =
-      "Write in simple, natural English that feels human. Avoid fluff and repetition. Output in clean Markdown. Return ONLY the final result.";
-
-    if (mode === "linkedin") {
+  const buildPrompt = (sourceText) => {
+    if (mode === "basic") {
       return {
-        system: "You are a top LinkedIn content creator who knows how to write viral, engaging posts. Create posts that are human, authentic, and provide real value. Focus on clarity and readability.",
+        system: "You are a LinkedIn post generator. Create engaging, professional LinkedIn posts that get high engagement. Use emojis sparingly. Include hashtags. Make it feel human and authentic.",
         user: `
-Topic / idea:
+Write a LinkedIn post about this topic:
 ${sourceText}
 
-Write ONE LinkedIn post with:
-- A strong opening hook (first line grabs attention)
-- Clear, concise paragraphs (4-6 paragraphs total)
-- Practical advice or insights
-- A question or call-to-action to encourage engagement
-- 3-5 relevant hashtags at the end
+Create a post that:
+1. Has a strong hook in the first line
+2. Is 4-6 paragraphs long
+3. Includes 3-5 bullet points with practical advice
+4. Ends with a call to action or question
+5. Includes 3-5 relevant hashtags
+6. Is written in natural, conversational English
+7. Feels like a real person wrote it
 
-Make it feel like a real person wrote it. Use natural language. Focus on providing value.
+Format with proper line breaks. Don't mark it as AI-generated. Make it valuable and shareable.
+`,
+        maxTokens: 800,
+      };
+    } else {
+      // Advanced mode
+      return {
+        system: "You are an expert LinkedIn content strategist. Create viral-style LinkedIn posts with lists, stats, and high engagement elements.",
+        user: `
+Create a high-performing LinkedIn post about:
+${sourceText}
 
-${common}
+Make it follow this viral template structure:
+
+**Hook:** Start with a surprising statistic or bold statement
+**Problem:** Identify a common pain point
+**List:** 5-7 points with checkmarks (✓)
+**Solution:** How to solve it
+**Benefits:** What readers will gain
+**Call to Action:** What they should do next
+**Hashtags:** 3-5 targeted hashtags
+
+Include emojis (😊 ✓ 🔥) naturally. Make it feel authentic, not spammy. Use line breaks for readability.
 `,
         maxTokens: 1000,
       };
     }
-
-    if (mode === "linkedin-ideas") {
-      return {
-        system: "You are a creative LinkedIn content strategist. Generate unique, engaging LinkedIn post ideas.",
-        user: `
-Topic / theme / keyword:
-${sourceText}
-
-Generate EXACTLY 10 creative LinkedIn post ideas. For each idea, provide in this exact format:
-
-**Idea Title:** [Your catchy title here]  
-**Core Message:** [Main takeaway in one line]  
-**Hook:** [Opening line that grabs attention]  
-**Content Angle:** [Unique perspective or approach]  
-**Target Audience:** [Who would find this valuable?]  
-**Hashtag Suggestions:** [3-5 relevant hashtags separated by spaces]  
-**Visual Idea:** [What image/video/graphic would work well?]  
-**Engagement Prompt:** [Question to ask audience]
-
-Leave one blank line between each idea.
-
-${common}
-`,
-        maxTokens: 2500,
-      };
-    }
-
-    // upwork
-    return {
-      system: "You are an Upwork proposal writer. Write concise, specific proposals matching client needs.",
-      user: `
-Client job post / requirements:
-${sourceText}
-
-Write an Upwork proposal using this structure:
-
-Hello [Client Name],
-
-I can help you achieve [their exact goal] by [your approach].
-
-From your post, you need:
-- [requirement #1]
-- [requirement #2]
-- [requirement #3]
-
-My plan:
-1) [Step 1] → Deliverable: [deliverable]
-2) [Step 2] → Deliverable: [deliverable]
-3) [Step 3] → Deliverable: [deliverable]
-
-Relevant experience:
-${experience?.trim() ? experience.trim() : "[Your relevant experience]"}
-
-Portfolio:
-${portfolioLinks?.trim() ? portfolioLinks.trim() : "[Your portfolio links]"}
-
-Quick questions:
-1) [question that affects scope]
-2) [question that affects timeline]
-
-Next step: Share details, and I'll start with [first milestone].
-Kind regards,
-[Your Name]
-
-${common}
-`,
-      maxTokens: 1100,
-    };
   };
 
   const runAI = async () => {
     setError("");
     setOutput("");
     setCopied(false);
-    setExpandedIdeas([]);
 
     const trimmed = input.trim();
     if (!trimmed) {
-      const errorMessages = {
-        "linkedin": "Please enter an idea for LinkedIn post.",
-        "linkedin-ideas": "Please enter a topic for LinkedIn ideas.",
-        "upwork": "Please paste the client job description."
-      };
-      setError(errorMessages[mode] || "Please enter some input.");
+      setError("Please enter your post idea or topic.");
       return;
     }
 
@@ -277,8 +188,7 @@ ${common}
         await signInWithPuter();
       }
 
-      const { sourceText } = await maybeFetchUrlText(puter, trimmed);
-      const { system, user, maxTokens } = buildPrompts(sourceText);
+      const { system, user, maxTokens } = buildPrompt(trimmed);
 
       const resp = await puter.ai.chat(
         [
@@ -288,7 +198,7 @@ ${common}
         false,
         {
           model: modelUsed,
-          temperature: mode === "linkedin-ideas" ? 0.8 : 0.7,
+          temperature: 0.7,
           max_tokens: maxTokens,
         }
       );
@@ -304,14 +214,6 @@ ${common}
     }
   };
 
-  const toggleIdea = (index) => {
-    if (expandedIdeas.includes(index)) {
-      setExpandedIdeas(expandedIdeas.filter(i => i !== index));
-    } else {
-      setExpandedIdeas([...expandedIdeas, index]);
-    }
-  };
-
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(output);
@@ -322,217 +224,88 @@ ${common}
     }
   };
 
-  const getTitle = () => {
-    switch(mode) {
-      case "linkedin": return "LinkedIn Post";
-      case "linkedin-ideas": return "LinkedIn Post Ideas";
-      case "upwork": return "Upwork Proposal";
-      default: return "";
-    }
-  };
-
-  const getPlaceholder = () => {
-    switch(mode) {
-      case "linkedin": 
-        return "Enter your idea or topic for LinkedIn post...";
-      case "linkedin-ideas":
-        return "Enter a topic to generate LinkedIn post ideas...";
-      case "upwork":
-        return "Paste the client job description here...";
-      default:
-        return "";
-    }
-  };
-
-  const getInputLabel = () => {
-    switch(mode) {
-      case "linkedin": return "Idea for LinkedIn Post";
-      case "linkedin-ideas": return "Topic for Ideas";
-      case "upwork": return "Client Job Description";
-      default: return "";
-    }
-  };
-
-  const formatOutput = (text) => {
-    if (mode === "linkedin-ideas") {
-      const ideas = text.split(/\n\s*\n/).filter(idea => idea.trim());
-      
-      return (
-        <div className="space-y-4">
-          {ideas.map((idea, index) => {
-            const lines = idea.split('\n').filter(line => line.trim());
-            const components = {};
-            
-            lines.forEach(line => {
-              if (line.startsWith('**Idea Title:**')) {
-                components.title = line.replace('**Idea Title:**', '').trim();
-              } else if (line.startsWith('**Core Message:**')) {
-                components.coreMessage = line.replace('**Core Message:**', '').trim();
-              } else if (line.startsWith('**Hook:**')) {
-                components.hook = line.replace('**Hook:**', '').trim();
-              } else if (line.startsWith('**Content Angle:**')) {
-                components.contentAngle = line.replace('**Content Angle:**', '').trim();
-              } else if (line.startsWith('**Target Audience:**')) {
-                components.targetAudience = line.replace('**Target Audience:**', '').trim();
-              } else if (line.startsWith('**Hashtag Suggestions:**')) {
-                components.hashtags = line.replace('**Hashtag Suggestions:**', '').trim();
-              } else if (line.startsWith('**Visual Idea:**')) {
-                components.visualIdea = line.replace('**Visual Idea:**', '').trim();
-              } else if (line.startsWith('**Engagement Prompt:**')) {
-                components.engagementPrompt = line.replace('**Engagement Prompt:**', '').trim();
-              }
-            });
-
-            const isExpanded = expandedIdeas.includes(index);
-
-            return (
-              <div key={index} className="border border-gray-200 rounded-lg bg-white">
-                <div 
-                  className="p-4 cursor-pointer hover:bg-gray-50"
-                  onClick={() => toggleIdea(index)}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-3">
-                      <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center text-white text-sm font-bold">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-800">{components.title || `Idea ${index + 1}`}</h3>
-                        <p className="text-gray-600 mt-1">{components.coreMessage || ''}</p>
-                      </div>
-                    </div>
-                    <button className="text-gray-400">
-                      {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                    </button>
-                  </div>
-                </div>
-
-                {isExpanded && (
-                  <div className="px-4 pb-4 border-t border-gray-100 pt-4">
-                    <div className="space-y-3">
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-1">Hook</h4>
-                        <p className="text-gray-800 bg-gray-50 p-3 rounded">"{components.hook || ''}"</p>
-                      </div>
-                      
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-1">Content Angle</h4>
-                        <p className="text-gray-700">{components.contentAngle || ''}</p>
-                      </div>
-
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-1">Target Audience</h4>
-                        <p className="text-gray-700">{components.targetAudience || ''}</p>
-                      </div>
-
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-1">Visual Idea</h4>
-                        <p className="text-gray-700">{components.visualIdea || ''}</p>
-                      </div>
-
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-1">Engagement Prompt</h4>
-                        <p className="text-gray-800 bg-gray-50 p-3 rounded">"{components.engagementPrompt || ''}"</p>
-                      </div>
-
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-1">Hashtags</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {components.hashtags?.split(' ').map((tag, tagIndex) => (
-                            <span key={tagIndex} className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm">
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      );
-    }
-
-    // LinkedIn Post
-    if (mode === "linkedin") {
-      const lines = text.split('\n').filter(line => line.trim());
-      
-      return (
-        <div className="border border-gray-300 rounded-lg bg-white">
-          {/* Post Header */}
-          <div className="p-4 border-b border-gray-200">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
-                AR
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-800">Abdul Rahim</h3>
-                <p className="text-sm text-gray-600">Web Designer & Developer</p>
-                <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
-                  <Clock className="w-3 h-3" />
-                  <span>Just now • 🌍 Public</span>
-                </div>
-              </div>
+  const formatPostPreview = (text) => {
+    const lines = text.split('\n').filter(line => line.trim());
+    
+    return (
+      <div className={`${viewMode === 'mobile' ? 'max-w-sm mx-auto' : ''}`}>
+        {/* LinkedIn Post Header */}
+        <div className="flex items-start gap-3 p-4 border-b border-gray-200">
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+            AR
+          </div>
+          <div>
+            <div className="font-semibold text-gray-800">Abdul Rahim</div>
+            <div className="text-sm text-gray-600">Web Designer & Developer • Sharing insights on digital creativity</div>
+            <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+              <span>12h • 🌍</span>
+              <span className="flex items-center gap-1">
+                <Eye className="w-3 h-3" />
+                1.2K views
+              </span>
             </div>
           </div>
+        </div>
 
-          {/* Post Content */}
-          <div className="p-4">
-            <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
-              {lines.map((line, index) => (
-                <p key={index} className="mb-3 last:mb-0 text-left">
+        {/* Post Content */}
+        <div className="p-4">
+          <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
+            {lines.map((line, index) => {
+              if (line.includes('✓')) {
+                return (
+                  <div key={index} className="flex items-start gap-2 mb-2">
+                    <span className="text-green-600 mt-1">✓</span>
+                    <span>{line.replace('✓', '').trim()}</span>
+                  </div>
+                );
+              }
+              return (
+                <p key={index} className="mb-3 last:mb-0">
                   {line}
                 </p>
-              ))}
-            </div>
-
-            {/* Post Metrics */}
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <div className="flex items-center gap-4 text-sm text-gray-600">
-                <span className="flex items-center gap-1">
-                  <ThumbsUp className="w-4 h-4" />
-                  42 likes
-                </span>
-                <span className="flex items-center gap-1">
-                  <MessageSquare className="w-4 h-4" />
-                  12 comments
-                </span>
-                <span className="flex items-center gap-1">
-                  <Share2 className="w-4 h-4" />
-                  8 shares
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="px-4 py-2 border-t border-gray-200 bg-gray-50">
-            <div className="flex items-center justify-around">
-              <button className="flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-100 text-gray-700">
-                <ThumbsUp className="w-4 h-4" />
-                <span>Like</span>
-              </button>
-              <button className="flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-100 text-gray-700">
-                <MessageSquare className="w-4 h-4" />
-                <span>Comment</span>
-              </button>
-              <button className="flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-100 text-gray-700">
-                <Share2 className="w-4 h-4" />
-                <span>Share</span>
-              </button>
-            </div>
+              );
+            })}
           </div>
         </div>
-      );
-    }
 
-    // Upwork Proposal
-    return (
-      <div className="border border-gray-200 rounded-lg bg-white p-4">
-        <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
-          {text}
+        {/* Post Stats */}
+        <div className="px-4 py-3 border-t border-gray-200">
+          <div className="flex items-center gap-4 text-sm text-gray-600">
+            <span className="flex items-center gap-1">
+              <span className="text-blue-500">👍</span>
+              64 likes
+            </span>
+            <span className="flex items-center gap-1">
+              <MessageSquare className="w-4 h-4" />
+              27 comments
+            </span>
+            <span className="flex items-center gap-1">
+              <Send className="w-4 h-4" />
+              4 reposts
+            </span>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="px-4 py-3 border-t border-gray-200">
+          <div className="flex items-center justify-around">
+            <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700">
+              <span className="text-gray-500">👍</span>
+              <span>Like</span>
+            </button>
+            <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700">
+              <MessageSquare className="w-4 h-4" />
+              <span>Comment</span>
+            </button>
+            <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700">
+              <Send className="w-4 h-4" />
+              <span>Share</span>
+            </button>
+            <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700">
+              <span className="text-gray-500">📤</span>
+              <span>Send</span>
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -546,199 +319,237 @@ ${common}
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-[#FEFDF8] p-4">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-blue-600 rounded-lg">
-              <Sparkles className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">Content Generator</h1>
-              <p className="text-gray-600">Create LinkedIn posts, ideas, and Upwork proposals</p>
-            </div>
-          </div>
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">FREE LINKEDIN POST GENERATOR</h1>
+          <p className="text-gray-600">Generate with AI...</p>
+        </div>
 
-          {/* Auth Status */}
-          <div className="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200 mb-4">
-            <div className="text-sm text-gray-700">
-              <div className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${puterReady ? "bg-green-500" : "bg-gray-300"}`} />
-                <span>{puterReady ? "Connected" : "Connecting..."}</span>
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column - Input */}
+          <div>
+            {/* Mode Tabs */}
+            <div className="mb-6">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setMode("basic")}
+                  className={`px-4 py-3 rounded-lg text-sm font-medium ${
+                    mode === "basic" 
+                      ? "bg-black text-white" 
+                      : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  Basic (1 Image)
+                </button>
+                <button
+                  onClick={() => setMode("advanced")}
+                  className={`px-4 py-3 rounded-lg text-sm font-medium ${
+                    mode === "advanced" 
+                      ? "bg-black text-white" 
+                      : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  Advanced (2 Images)
+                </button>
               </div>
             </div>
-            <div className="flex gap-2">
-              {!signedIn ? (
-                <button
-                  onClick={signInWithPuter}
-                  className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded flex items-center gap-2"
-                >
-                  <LogIn className="w-3 h-3" />
-                  Sign In
-                </button>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-green-600">✓ Signed in</span>
-                  <button
-                    onClick={signOutFromPuter}
-                    className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded flex items-center gap-2"
-                  >
-                    <LogOut className="w-3 h-3" />
-                    Sign Out
-                  </button>
+
+            {/* Input Section */}
+            <div className="bg-white border border-gray-300 rounded-lg p-5 mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Write Your Post Idea
+              </label>
+
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={onCtrlEnter}
+                placeholder="What do you want to post about? (e.g., 'digital marketing tips', 'career advice', 'industry insights')"
+                className="w-full h-48 p-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-black focus:border-black resize-none text-gray-700 mb-4"
+              />
+
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-red-700">{error}</div>
+                  </div>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
 
-        {/* Mode Tabs */}
-        <div className="bg-white p-3 rounded-lg border border-gray-200 mb-6">
-          <div className="flex gap-2">
-            <button
-              onClick={() => setMode("linkedin")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                mode === "linkedin" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                <FileText className="w-4 h-4" />
-                LinkedIn Post
-              </span>
-            </button>
-
-            <button
-              onClick={() => setMode("linkedin-ideas")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                mode === "linkedin-ideas" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                <Lightbulb className="w-4 h-4" />
-                Post Ideas
-              </span>
-            </button>
-
-            <button
-              onClick={() => setMode("upwork")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                mode === "upwork" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                <Briefcase className="w-4 h-4" />
-                Upwork
-              </span>
-            </button>
-          </div>
-        </div>
-
-        {/* Input Section */}
-        <div className="bg-white p-5 rounded-lg border border-gray-200 mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            {getInputLabel()}
-          </label>
-
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={onCtrlEnter}
-            placeholder={getPlaceholder()}
-            className="w-full h-40 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-gray-700"
-          />
-
-          {/* Upwork optional fields */}
-          {mode === "upwork" && (
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Optional: Your Experience
-                </label>
-                <textarea
-                  value={experience}
-                  onChange={(e) => setExperience(e.target.value)}
-                  placeholder="Describe your relevant experience..."
-                  className="w-full h-32 p-3 border border-gray-300 rounded-lg resize-none"
-                />
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-500">
+                  <span className="flex items-center gap-1">
+                    💡
+                    <span>Press <kbd className="px-2 py-1 bg-gray-100 rounded border border-gray-300 mx-1">Ctrl + Enter</kbd> to generate</span>
+                  </span>
+                </div>
+                
+                <button
+                  onClick={runAI}
+                  disabled={loading}
+                  className="bg-black hover:bg-gray-800 disabled:bg-gray-400 text-white font-medium py-3 px-6 rounded-lg flex items-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5" />
+                      Generate Post
+                    </>
+                  )}
+                </button>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Optional: Portfolio Links
-                </label>
-                <textarea
-                  value={portfolioLinks}
-                  onChange={(e) => setPortfolioLinks(e.target.value)}
-                  placeholder="Paste links (one per line)..."
-                  className="w-full h-32 p-3 border border-gray-300 rounded-lg resize-none"
-                />
+              {/* Auth Status */}
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${puterReady ? "bg-green-500" : "bg-gray-300"}`} />
+                      <span>{puterReady ? "AI Ready" : "Connecting..."}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    {!signedIn ? (
+                      <button
+                        onClick={signInWithPuter}
+                        className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded border border-gray-300 flex items-center gap-2"
+                      >
+                        <LogIn className="w-3 h-3" />
+                        Sign In
+                      </button>
+                    ) : (
+                      <button
+                        onClick={signOutFromPuter}
+                        className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded border border-gray-300 flex items-center gap-2"
+                      >
+                        <LogOut className="w-3 h-3" />
+                        Sign Out
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-          )}
 
-          {error && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
-                <div className="text-sm text-red-700">{error}</div>
+            {/* Copy Section */}
+            {output && (
+              <div className="bg-white border border-gray-300 rounded-lg p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-gray-800">Copy to Clipboard</h3>
+                  <button
+                    onClick={copyToClipboard}
+                    className="flex items-center gap-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2.5 rounded-lg border border-gray-300"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="w-4 h-4" /> Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4" /> Copy Text
+                      </>
+                    )}
+                  </button>
+                </div>
+                <div className="whitespace-pre-wrap bg-gray-50 p-4 rounded-lg border border-gray-200 text-sm text-gray-700 overflow-y-auto max-h-60">
+                  {output}
+                </div>
               </div>
-            </div>
-          )}
-
-          <button
-            onClick={runAI}
-            disabled={loading}
-            className="mt-4 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Generating...
-              </>
-            ) : mode === "linkedin-ideas" ? (
-              <>
-                <Zap className="w-5 h-5" />
-                Generate 10 Ideas
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-5 h-5" />
-                Generate {getTitle()}
-              </>
             )}
-          </button>
+          </div>
+
+          {/* Right Column - Preview */}
+          <div>
+            <div className="bg-white border border-gray-300 rounded-lg p-5">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-semibold text-gray-800">Post Preview</h3>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setViewMode("desktop")}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
+                      viewMode === "desktop" 
+                        ? "bg-black text-white" 
+                        : "bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200"
+                    }`}
+                  >
+                    <Monitor className="w-4 h-4" />
+                    Desktop
+                  </button>
+                  <button
+                    onClick={() => setViewMode("mobile")}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
+                      viewMode === "mobile" 
+                        ? "bg-black text-white" 
+                        : "bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200"
+                    }`}
+                  >
+                    <Smartphone className="w-4 h-4" />
+                    Mobile
+                  </button>
+                </div>
+              </div>
+
+              {output ? (
+                <div className="border border-gray-300 rounded-lg overflow-hidden">
+                  {formatPostPreview(output)}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <ImageIcon className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <h4 className="text-lg font-semibold text-gray-700 mb-2">Post Preview</h4>
+                  <p className="text-gray-500">
+                    Your LinkedIn post will appear here after generation
+                  </p>
+                  <div className="mt-6 grid grid-cols-2 gap-2">
+                    <div className="h-32 bg-gray-100 rounded-lg"></div>
+                    {mode === "advanced" && (
+                      <div className="h-32 bg-gray-100 rounded-lg"></div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Mode Info */}
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <div className="text-sm text-gray-600">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="font-medium">{mode === "basic" ? "Basic Mode:" : "Advanced Mode:"}</span>
+                    <span>{mode === "basic" ? "Single image post format" : "Carousel/multi-image format"}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <TrendingUp className="w-3 h-3" />
+                    <span>{mode === "basic" ? "Standard engagement format" : "Viral-style with lists & stats"}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Output Section */}
-        {output && (
-          <div className="bg-white p-5 rounded-lg border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                <Check className="w-5 h-5 text-green-600" />
-                {getTitle()}
-              </h2>
-              <button
-                onClick={copyToClipboard}
-                className="flex items-center gap-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg"
-              >
-                {copied ? (
-                  <>
-                    <Check className="w-4 h-4" /> Copied
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-4 h-4" /> Copy
-                  </>
-                )}
+        {/* Bottom CTA */}
+        <div className="mt-8 text-center">
+          <div className="bg-white border border-gray-300 rounded-lg p-5 inline-block">
+            <p className="text-gray-700 mb-3">Need help improving your post?</p>
+            <div className="flex gap-2 justify-center">
+              <button className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg border border-gray-300 text-sm">
+                Ask AI what to change
+              </button>
+              <button className="px-4 py-2 bg-black hover:bg-gray-800 text-white rounded-lg text-sm">
+                Get Post Insights
               </button>
             </div>
-
-            <div className="overflow-y-auto">
-              {formatOutput(output)}
-            </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
