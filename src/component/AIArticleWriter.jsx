@@ -21,10 +21,6 @@ function isProbablyUrl(text) {
   return /^https?:\/\/\S+$/i.test(t);
 }
 
-function wordCount(text) {
-  return (text || "").trim().split(/\s+/).filter(Boolean).length;
-}
-
 function htmlToReadableText(html) {
   try {
     const parser = new DOMParser();
@@ -175,28 +171,30 @@ ${common}
 Topic / theme / keyword:
 ${sourceText}
 
-Generate EXACTLY 10 creative LinkedIn post ideas. For each idea, provide:
+Generate EXACTLY 10 creative LinkedIn post ideas. For each idea, provide in this exact format:
 
-1. **Idea Title** (Catchy, attention-grabbing)
-2. **Core Message** (What's the main takeaway?)
-3. **Hook** (Opening line that grabs attention)
-4. **Content Angle** (Unique perspective or approach)
-5. **Target Audience** (Who would find this valuable?)
-6. **Hashtag Suggestions** (3-5 relevant hashtags)
-7. **Visual Idea** (What image/video/graphic would work well?)
-8. **Engagement Prompt** (Question to ask audience)
+**Idea Title:** [Your catchy title here]  
+**Core Message:** [Main takeaway in one line]  
+**Hook:** [Opening line that grabs attention]  
+**Content Angle:** [Unique perspective or approach]  
+**Target Audience:** [Who would find this valuable?]  
+**Hashtag Suggestions:** [3-5 relevant hashtags separated by spaces]  
+**Visual Idea:** [What image/video/graphic would work well?]  
+**Engagement Prompt:** [Question to ask audience]
 
-Format each idea as a numbered item with bold headings. Make ideas diverse, practical, and LinkedIn-friendly.
+Leave one blank line between each idea. Make ideas diverse, practical, and LinkedIn-friendly.
 
 Rules:
-- Ideas should be unique and not generic
-- Focus on value, insights, or storytelling
+- Start each idea with "**Idea Title:**" on the first line
+- Each field should be on its own line
+- Do not use bullet points or numbered lists
+- Keep each idea concise and focused
 - Include different formats (tips, stories, questions, lists, etc.)
 - Keep professional but human tone
 
 ${common}
 `,
-        maxTokens: 2000,
+        maxTokens: 2500,
       };
     }
 
@@ -340,6 +338,118 @@ ${common}
       case "upwork": return "Client Job Description";
       default: return "";
     }
+  };
+
+  // Format the output for LinkedIn Ideas
+  const formatOutput = (text) => {
+    if (mode !== "linkedin-ideas") return text;
+    
+    // Split text by double newlines to separate ideas
+    const ideas = text.split(/\n\s*\n/).filter(idea => idea.trim());
+    
+    return (
+      <div className="space-y-8">
+        {ideas.map((idea, index) => {
+          // Parse each idea into its components
+          const lines = idea.split('\n').filter(line => line.trim());
+          const components = {};
+          
+          lines.forEach(line => {
+            if (line.startsWith('**Idea Title:**')) {
+              components.title = line.replace('**Idea Title:**', '').trim();
+            } else if (line.startsWith('**Core Message:**')) {
+              components.coreMessage = line.replace('**Core Message:**', '').trim();
+            } else if (line.startsWith('**Hook:**')) {
+              components.hook = line.replace('**Hook:**', '').trim();
+            } else if (line.startsWith('**Content Angle:**')) {
+              components.contentAngle = line.replace('**Content Angle:**', '').trim();
+            } else if (line.startsWith('**Target Audience:**')) {
+              components.targetAudience = line.replace('**Target Audience:**', '').trim();
+            } else if (line.startsWith('**Hashtag Suggestions:**')) {
+              components.hashtags = line.replace('**Hashtag Suggestions:**', '').trim();
+            } else if (line.startsWith('**Visual Idea:**')) {
+              components.visualIdea = line.replace('**Visual Idea:**', '').trim();
+            } else if (line.startsWith('**Engagement Prompt:**')) {
+              components.engagementPrompt = line.replace('**Engagement Prompt:**', '').trim();
+            }
+          });
+
+          return (
+            <div key={index} className="border border-gray-200 rounded-xl p-6 bg-gradient-to-br from-gray-50 to-white shadow-sm">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">
+                  {index + 1}
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800">{components.title || `Idea ${index + 1}`}</h3>
+                  <p className="text-sm text-gray-600 mt-1">{components.coreMessage || ''}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                      <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                      Hook
+                    </h4>
+                    <p className="text-gray-800 bg-yellow-50 p-3 rounded-lg border-l-4 border-yellow-400">{components.hook || ''}</p>
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                      Content Angle
+                    </h4>
+                    <p className="text-gray-700">{components.contentAngle || ''}</p>
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                      Target Audience
+                    </h4>
+                    <p className="text-gray-700">{components.targetAudience || ''}</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                      <span className="w-2 h-2 bg-pink-500 rounded-full"></span>
+                      Hashtags
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {components.hashtags ? components.hashtags.split(' ').map((tag, tagIndex) => (
+                        <span key={tagIndex} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
+                          {tag}
+                        </span>
+                      )) : null}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                      <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
+                      Visual Idea
+                    </h4>
+                    <p className="text-gray-700 bg-indigo-50 p-3 rounded-lg">{components.visualIdea || ''}</p>
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                      <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                      Engagement Prompt
+                    </h4>
+                    <p className="text-gray-800 bg-green-50 p-3 rounded-lg border-l-4 border-green-400">{components.engagementPrompt || ''}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   return (
@@ -579,7 +689,11 @@ ${common}
             </div>
 
             <div className="prose prose-lg max-w-none">
-              <div className="whitespace-pre-wrap text-gray-700 leading-relaxed text-base">{output}</div>
+              {mode === "linkedin-ideas" ? (
+                formatOutput(output)
+              ) : (
+                <div className="whitespace-pre-wrap text-gray-700 leading-relaxed text-base">{output}</div>
+              )}
             </div>
           </div>
         )}
