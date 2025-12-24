@@ -1,4 +1,5 @@
-import React, { useMemo, useState, useRef, useEffect } from "react";
+
+import React, { useMemo, useState } from "react";
 import {
   Loader2,
   Sparkles,
@@ -10,32 +11,6 @@ import {
   LogOut,
   FileText,
   Briefcase,
-  Lightbulb,
-  Zap,
-  MessageSquare,
-  Image as ImageIcon,
-  Smartphone,
-  Monitor,
-  Send,
-  Eye,
-  Users,
-  TrendingUp,
-  Bold,
-  Italic,
-  List,
-  ListOrdered,
-  Type,
-  Hash,
-  Smile,
-  Link2,
-  Maximize2,
-  Minimize2,
-  Edit3,
-  Save,
-  Heart,
-  Repeat2,
-  Share,
-  MoreHorizontal,
 } from "lucide-react";
 
 const PRIMARY_MODEL = "gpt-4o-mini";
@@ -43,6 +18,10 @@ const PRIMARY_MODEL = "gpt-4o-mini";
 function isProbablyUrl(text) {
   const t = text.trim();
   return /^https?:\/\/\S+$/i.test(t);
+}
+
+function wordCount(text) {
+  return (text || "").trim().split(/\s+/).filter(Boolean).length;
 }
 
 function htmlToReadableText(html) {
@@ -84,44 +63,21 @@ async function waitForPuter(timeoutMs = 8000) {
   return null;
 }
 
-export default function LinkedInPostGenerator() {
-  // LinkedIn Post Generator Mode
-  const [mode, setMode] = useState("basic"); // basic | advanced
+export default function AIWriterPuterStable() {
+  const [mode, setMode] = useState("article"); // article | linkedin | upwork
   const [input, setInput] = useState("");
+  const [experience, setExperience] = useState("");
+  const [portfolioLinks, setPortfolioLinks] = useState("");
+
   const [output, setOutput] = useState("");
-  const [editedOutput, setEditedOutput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [copied, setCopied] = useState(false);
-  const [viewMode, setViewMode] = useState("desktop"); // desktop | mobile
-  const [showEditor, setShowEditor] = useState(true);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [activeTab, setActiveTab] = useState("linkedin"); // linkedin | ideas | upwork
 
-  // Puter state
   const [puterReady, setPuterReady] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  const editorRef = useRef(null);
   const modelUsed = useMemo(() => PRIMARY_MODEL, []);
-
-  // Formatting functions
-  const formatText = (command, value = null) => {
-    if (editorRef.current) {
-      editorRef.current.focus();
-      document.execCommand(command, false, value);
-    }
-  };
-
-  const insertText = (text) => {
-    if (editorRef.current) {
-      editorRef.current.focus();
-      const selection = window.getSelection();
-      const range = selection.getRangeAt(0);
-      range.deleteContents();
-      range.insertNode(document.createTextNode(text));
-    }
-  };
 
   const ensurePuter = async () => {
     setError("");
@@ -164,57 +120,146 @@ export default function LinkedInPostGenerator() {
     }
   };
 
-  const buildPrompt = (sourceText) => {
-    if (mode === "basic") {
+  const maybeFetchUrlText = async (puter, raw) => {
+    const trimmed = raw.trim();
+
+    // Upwork mode: URL fetching disabled
+    if (mode === "upwork") {
+      return { sourceText: trimmed.slice(0, 12000), fetchedFromUrl: false };
+    }
+
+    if (!isProbablyUrl(trimmed)) {
+      return { sourceText: trimmed.slice(0, 12000), fetchedFromUrl: false };
+    }
+
+    // Puter net.fetch is CORS-free (but requires SDK working properly)
+    const res = await puter.net.fetch(trimmed);
+    const html = await res.text();
+    const text = htmlToReadableText(html);
+
+    return {
+      sourceText: `URL: ${trimmed}\n\nPAGE TEXT:\n${text.slice(0, 12000)}`,
+      fetchedFromUrl: true,
+    };
+  };
+
+  const buildPrompts = (sourceText) => {
+    const common =
+      "Write in simple, natural English that feels human. Avoid fluff and repetition. Output in clean Markdown. Return ONLY the final result.";
+
+    if (mode === "article") {
       return {
-        system: "You are a LinkedIn post generator. Create engaging, professional LinkedIn posts. Use emojis, line breaks, and hashtags naturally.",
+        system:
+          "You are a professional SEO editor and web article writer. You follow strict structure and word count. Keep it simple and human.",
         user: `
-Topic: ${sourceText}
+Topic / source:
+${sourceText}
 
-Write a LinkedIn post that:
-- Has a strong opening hook
-- Is 4-6 paragraphs maximum
-- Includes bullet points (use • character)
-- Ends with 3-5 relevant hashtags
-- Has a call-to-action or question
-- Uses natural, conversational tone
+Requirements (STRICT):
+- Length: 800 to 1000 words (strict)
+- Structure:
+  1) Title
+  2) Hooking introduction (2-3 short paragraphs)
+  3) 3 to 5 headings with concise paragraphs
+  4) 3-6 bullet takeaways (practical)
+  5) Strong conclusion (2-4 lines)
+- Clarity: Simple English, easy to read
+- No filler. No unnecessary repetition.
 
-Format with proper line breaks.
+SEO:
+- Choose ONE primary keyword phrase and use it naturally in:
+  - Title
+  - first 120 words
+  - at least 2 headings
+- Add related keywords naturally (no stuffing).
+
+${common}
+`,
+        maxTokens: 1800,
+      };
+    }
+
+    if (mode === "linkedin") {
+      return {
+        system: "You write LinkedIn posts in simple English. Make it scannable, practical, and human. No hype.",
+        user: `
+Idea / source:
+${sourceText}
+
+Write ONE LinkedIn post with:
+- A strong first line hook
+- 4 to 8 short lines/paragraphs
+- 3 to 6 bullet points with practical advice
+- One clear CTA line (question/invitation)
+- 3 to 6 relevant hashtags at the end
+
+${common}
 `,
         maxTokens: 800,
       };
-    } else {
-      // Advanced mode
-      return {
-        system: "You are an expert LinkedIn content creator. Create viral-style LinkedIn posts with lists, stats, and high engagement elements.",
-        user: `
-Topic: ${sourceText}
-
-Create a LinkedIn post in this viral format:
-
-**Hook:** Start with a surprising statistic or bold statement
-**Problem:** Identify a common pain point
-**List:** 5-7 bullet points with checkmarks (✓)
-**Solution:** Brief solution
-**CTA:** Clear call-to-action
-**Hashtags:** 3-5 targeted hashtags
-
-Use emojis naturally. Make it authentic and valuable.
-`,
-        maxTokens: 1000,
-      };
     }
+
+    // upwork
+    return {
+      system: "You are an Upwork proposal writer. Write concise, specific proposals in simple English matching the client needs.",
+      user: `
+Client job post / requirements:
+${sourceText}
+
+Write an Upwork proposal using EXACTLY this template structure:
+
+Hello [Client Name],
+
+I can help you achieve [their exact goal] by [your approach], so you get [result] without [main risk].
+
+From your post, you need:
+- [requirement #1]
+- [requirement #2]
+- [requirement #3]
+
+My plan:
+1) [Step 1] → Deliverable: [deliverable]
+2) [Step 2] → Deliverable: [deliverable]
+3) [Step 3] → Deliverable: [deliverable]
+
+Relevant proof:
+- [Similar project/result with numbers OR strong specific outcome]
+- [1 portfolio item or 1 short result]
+
+Quick questions:
+1) [question that affects scope]
+2) [question that affects timeline]
+
+Next step: Share [URL/files/access], and I will confirm milestones + start with [small first milestone].
+Kind regards,
+(your-name)
+
+Rules:
+- Do NOT add extra sections.
+- Do NOT invent client name.
+- Use optional info ONLY in "Relevant proof" if present (otherwise keep proof general).
+
+Optional info:
+Experience:
+${experience?.trim() ? experience.trim() : "(none)"}
+
+Portfolio links:
+${portfolioLinks?.trim() ? portfolioLinks.trim() : "(none)"}
+
+${common}
+`,
+      maxTokens: 1100,
+    };
   };
 
   const runAI = async () => {
     setError("");
     setOutput("");
-    setEditedOutput("");
     setCopied(false);
 
     const trimmed = input.trim();
     if (!trimmed) {
-      setError("Please enter your post idea or topic.");
+      setError(mode === "upwork" ? "Please paste the client job description." : "Please enter a topic, a URL, or source text.");
       return;
     }
 
@@ -226,7 +271,8 @@ Use emojis naturally. Make it authentic and valuable.
         await signInWithPuter();
       }
 
-      const { system, user, maxTokens } = buildPrompt(trimmed);
+      const { sourceText } = await maybeFetchUrlText(puter, trimmed);
+      const { system, user, maxTokens } = buildPrompts(sourceText);
 
       const resp = await puter.ai.chat(
         [
@@ -236,7 +282,7 @@ Use emojis naturally. Make it authentic and valuable.
         false,
         {
           model: modelUsed,
-          temperature: 0.7,
+          temperature: 0.6,
           max_tokens: maxTokens,
         }
       );
@@ -244,41 +290,32 @@ Use emojis naturally. Make it authentic and valuable.
       let text = extractChatText(resp);
       if (!text) throw new Error("Empty response from AI. Please try again.");
 
-      setOutput(text);
-      setEditedOutput(text);
-      
-      // Set editor content
-      if (editorRef.current) {
-        editorRef.current.innerHTML = text.replace(/\n/g, '<br>');
+      // Article strict word count fix once
+      if (mode === "article") {
+        const wc = wordCount(text);
+        if (wc < 800 || wc > 1000) {
+          const resp2 = await puter.ai.chat(
+            [
+              { role: "system", content: system },
+              {
+                role: "user",
+                content: `Rewrite the article to be STRICTLY 800–1000 words. Keep exact structure. Here is draft:\n\n${text}`,
+              },
+            ],
+            false,
+            { model: modelUsed, temperature: 0.4, max_tokens: 1900 }
+          );
+
+          const fixed = extractChatText(resp2);
+          if (fixed) text = fixed;
+        }
       }
+
+      setOutput(text);
     } catch (e) {
       setError(stringifyError(e));
     } finally {
       setLoading(false);
-    }
-  };
-
-  const copyToClipboard = async () => {
-    try {
-      const text = editedOutput || output;
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setError("Copy failed. Please manually select and copy.");
-    }
-  };
-
-  const handleEditorChange = () => {
-    if (editorRef.current) {
-      setEditedOutput(editorRef.current.innerText);
-    }
-  };
-
-  const saveEditedContent = () => {
-    if (editorRef.current) {
-      setEditedOutput(editorRef.current.innerText);
-      setOutput(editorRef.current.innerText);
     }
   };
 
@@ -289,585 +326,226 @@ Use emojis naturally. Make it authentic and valuable.
     }
   };
 
-  // Format the post preview - SAME FOR DESKTOP AND MOBILE
-  const formatPostPreview = () => {
-    const content = editedOutput || output;
-    const hasContent = content && content.trim().length > 0;
-    
-    return (
-      <div className={`${viewMode === 'mobile' ? 'max-w-sm' : ''} bg-white rounded-xl border border-gray-300 overflow-hidden`}>
-        {/* LinkedIn Post Header - EXACT SAME */}
-        <div className="flex items-start gap-3 p-4">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
-            FP
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="font-semibold text-gray-900 text-sm">Fernando Pessagno</div>
-                <div className="text-gray-600 text-xs">Founder at aiCarousels, the first AI Carousel Generator</div>
-              </div>
-              <MoreHorizontal className="w-4 h-4 text-gray-400" />
-            </div>
-            <div className="flex items-center gap-2 text-gray-500 text-xs mt-1">
-              <span>12h</span>
-              <span>•</span>
-              <span className="flex items-center gap-1">
-                <span>🌍</span>
-                <span>Public</span>
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Post Content - EXACT SAME */}
-        <div className="px-4 pb-3">
-          <div className="whitespace-pre-wrap text-gray-900 text-sm leading-relaxed">
-            {hasContent ? (
-              content.split('\n').map((line, index) => {
-                if (line.includes('✓')) {
-                  return (
-                    <div key={index} className="flex items-start gap-2 mb-1">
-                      <span className="text-green-600 mt-0.5">✓</span>
-                      <span>{line.replace('✓', '').trim()}</span>
-                    </div>
-                  );
-                } else if (line.includes('•')) {
-                  return (
-                    <div key={index} className="flex items-start gap-2 mb-1">
-                      <span className="text-gray-500 mt-0.5">•</span>
-                      <span>{line.replace('•', '').trim()}</span>
-                    </div>
-                  );
-                } else if (line.trim().startsWith('#') || line.trim() === '') {
-                  return (
-                    <div key={index} className="mb-1">
-                      {line}
-                    </div>
-                  );
-                } else {
-                  return (
-                    <p key={index} className="mb-2 last:mb-0">
-                      {line}
-                    </p>
-                  );
-                }
-              })
-            ) : (
-              <div className="text-gray-400 italic">
-                Write Your Post
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Stats Section - EXACT SAME */}
-        <div className="px-4 py-3 border-t border-gray-200">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1">
-                <span className="text-gray-600 text-xs">64</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="text-gray-600 text-xs">27 comments</span>
-                <span className="text-gray-400">·</span>
-                <span className="text-gray-600 text-xs">4 reposts</span>
-              </div>
-            </div>
-            <div className="text-gray-400 text-xs">
-              <Eye className="w-3 h-3 inline mr-1" />
-              1.2K views
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons - EXACT SAME */}
-        <div className="border-t border-gray-200">
-          <div className="grid grid-cols-4 divide-x divide-gray-200">
-            <button className="flex flex-col items-center justify-center py-3 hover:bg-gray-50 transition-colors">
-              <div className="flex items-center gap-1">
-                <span className="text-gray-500">👍</span>
-              </div>
-              <span className="text-xs text-gray-600 mt-1">Like</span>
-            </button>
-            <button className="flex flex-col items-center justify-center py-3 hover:bg-gray-50 transition-colors">
-              <div className="flex items-center gap-1">
-                <MessageSquare className="w-4 h-4 text-gray-500" />
-              </div>
-              <span className="text-xs text-gray-600 mt-1">Comment</span>
-            </button>
-            <button className="flex flex-col items-center justify-center py-3 hover:bg-gray-50 transition-colors">
-              <div className="flex items-center gap-1">
-                <Repeat2 className="w-4 h-4 text-gray-500" />
-              </div>
-              <span className="text-xs text-gray-600 mt-1">Share</span>
-            </button>
-            <button className="flex flex-col items-center justify-center py-3 hover:bg-gray-50 transition-colors">
-              <div className="flex items-center gap-1">
-                <Send className="w-4 h-4 text-gray-500" />
-              </div>
-              <span className="text-xs text-gray-600 mt-1">Send</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Render LinkedIn Ideas Feature
-  const renderLinkedInIdeas = () => {
-    return (
-      <div className="space-y-6">
-        <div className="bg-white border border-gray-300 rounded-xl p-5">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <Lightbulb className="w-5 h-5 text-yellow-600" />
-            LinkedIn Post Ideas Generator
-          </h3>
-          
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Enter a topic to generate 10 LinkedIn post ideas
-            </label>
-            <textarea
-              placeholder="e.g., digital marketing, remote work, AI tools, career growth..."
-              className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-black focus:border-black resize-none"
-            />
-          </div>
-          
-          <button className="w-full bg-black hover:bg-gray-800 text-white font-medium py-3 px-6 rounded-lg flex items-center justify-center gap-2">
-            <Zap className="w-5 h-5" />
-            Generate 10 Ideas
-          </button>
-          
-          <div className="mt-6 text-sm text-gray-600">
-            <p>• Each idea includes title, hook, content angle, and hashtags</p>
-            <p>• Perfect for content planning</p>
-            <p>• Save time on brainstorming</p>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Render Upwork Proposal Feature
-  const renderUpworkProposal = () => {
-    return (
-      <div className="space-y-6">
-        <div className="bg-white border border-gray-300 rounded-xl p-5">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <Briefcase className="w-5 h-5 text-gray-700" />
-            Upwork Proposal Generator
-          </h3>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Paste client job description
-              </label>
-              <textarea
-                placeholder="Paste the client job description here..."
-                className="w-full h-40 p-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-black focus:border-black resize-none"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Your experience (optional)
-              </label>
-              <textarea
-                placeholder="Describe your relevant experience..."
-                className="w-full h-32 p-3 border border-gray-300 rounded-lg resize-none"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Portfolio links (optional)
-              </label>
-              <textarea
-                placeholder="Paste links (one per line)..."
-                className="w-full h-24 p-3 border border-gray-300 rounded-lg resize-none"
-              />
-            </div>
-          </div>
-          
-          <button className="mt-4 w-full bg-black hover:bg-gray-800 text-white font-medium py-3 px-6 rounded-lg flex items-center justify-center gap-2">
-            <FileText className="w-5 h-5" />
-            Generate Proposal
-          </button>
-        </div>
-      </div>
-    );
-  };
-
   return (
-    <div className="min-h-screen bg-[#FEFDF8] p-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">FREE LINKEDIN POST GENERATOR</h1>
-          <p className="text-gray-600">Generate with AI...</p>
+    <div className="min-h-screen bg-[#EFFDE8] p-4 sm:p-6">
+      <div className="max-w-5xl mx-auto">
+        <div className="text-center mb-6">
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl shadow-lg">
+              <Sparkles className="w-7 h-7 text-white" />
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+              (Free Write) Article • LinkedIn • Upwork
+            </h1>
+          </div>
+
+          <p className="text-gray-600">Provide Your Idea</p>
+
+          {mode !== "upwork" && (
+            <p className="text-xs text-gray-500 mt-2 flex items-center justify-center gap-2">
+              <LinkIcon className="w-4 h-4" />
+              Paste a public URL to auto-fetch page text.
+            </p>
+          )}
         </div>
 
-        {/* Main Tabs */}
-        <div className="mb-6">
+        {/* Auth bar */}
+        <div className="bg-white rounded-2xl shadow-xl p-4 mb-6 border border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="text-sm text-gray-700">
+            <div className="flex items-center gap-2">
+              <span className={`inline-block w-2.5 h-2.5 rounded-full ${puterReady ? "bg-green-500" : "bg-gray-300"}`} />
+              <span>Status: {puterReady ? "Loaded" : "Not loaded"}</span>
+            </div>
+            <div className="flex items-center gap-2 mt-1">
+              <span className={`inline-block w-2.5 h-2.5 rounded-full ${signedIn ? "bg-green-500" : "bg-gray-300"}`} />
+              <span>Sign-in: {signedIn ? "Signed in" : "Not signed in"}</span>
+            </div>
+          </div>
+
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => setActiveTab("linkedin")}
-              className={`px-4 py-3 rounded-lg text-sm font-medium ${
-                activeTab === "linkedin" 
-                  ? "bg-black text-white" 
-                  : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-              }`}
+              onClick={async () => {
+                try {
+                  await signInWithPuter();
+                } catch (e) {
+                  setError(stringifyError(e));
+                }
+              }}
+              className="inline-flex items-center gap-2 text-sm bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-4 py-2 rounded-lg transition-colors font-medium shadow-sm"
             >
-              <span className="flex items-center gap-2">
-                <MessageSquare className="w-4 h-4" />
-                LinkedIn Post
-              </span>
+              <LogIn className="w-4 h-4" />
+              Sign in
             </button>
 
             <button
-              onClick={() => setActiveTab("ideas")}
-              className={`px-4 py-3 rounded-lg text-sm font-medium ${
-                activeTab === "ideas" 
-                  ? "bg-black text-white" 
-                  : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-              }`}
+              onClick={async () => {
+                try {
+                  await signOutFromPuter();
+                } catch (e) {
+                  setError(stringifyError(e));
+                }
+              }}
+              className="inline-flex items-center gap-2 text-sm bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg transition-colors font-medium border"
             >
-              <span className="flex items-center gap-2">
-                <Lightbulb className="w-4 h-4" />
-                LinkedIn Ideas
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("upwork")}
-              className={`px-4 py-3 rounded-lg text-sm font-medium ${
-                activeTab === "upwork" 
-                  ? "bg-black text-white" 
-                  : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                <Briefcase className="w-4 h-4" />
-                Upwork Proposal
-              </span>
+              <LogOut className="w-4 h-4" />
+              Sign out
             </button>
           </div>
         </div>
 
-        {/* Main Content */}
-        {activeTab === "linkedin" ? (
-          <div className={`grid grid-cols-1 ${isFullscreen ? 'lg:grid-cols-1' : 'lg:grid-cols-2'} gap-6`}>
-            {/* Left Column - Input & Editor */}
-            <div className={`${isFullscreen ? 'col-span-1' : ''}`}>
-              {/* Mode Tabs */}
-              <div className="mb-6">
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setMode("basic")}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                      mode === "basic" 
-                        ? "bg-black text-white" 
-                        : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                    }`}
-                  >
-                    Basic (1 Image)
-                  </button>
-                  <button
-                    onClick={() => setMode("advanced")}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                      mode === "advanced" 
-                        ? "bg-black text-white" 
-                        : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                    }`}
-                  >
-                    Advanced (2 Images)
-                  </button>
-                </div>
-              </div>
+        {/* Mode tabs */}
+        <div className="bg-white rounded-2xl shadow-xl p-4 mb-6 border border-gray-100">
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setMode("article")}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
+                mode === "article" ? "bg-purple-600 text-white" : "bg-gray-50 hover:bg-gray-100 text-gray-700"
+              }`}
+            >
+              Article (SEO)
+            </button>
 
-              {/* Input Section */}
-              <div className="bg-white border border-gray-300 rounded-xl p-5 mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Write Your Post Idea
+            <button
+              onClick={() => setMode("linkedin")}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
+                mode === "linkedin" ? "bg-purple-600 text-white" : "bg-gray-50 hover:bg-gray-100 text-gray-700"
+              }`}
+            >
+              LinkedIn Post
+            </button>
+
+            <button
+              onClick={() => setMode("upwork")}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
+                mode === "upwork" ? "bg-purple-600 text-white" : "bg-gray-50 hover:bg-gray-100 text-gray-700"
+              }`}
+            >
+              Upwork Proposal
+            </button>
+          </div>
+        </div>
+
+        {/* Input */}
+        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border border-gray-100">
+          <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+            <FileText className="w-4 h-4 text-purple-600" />
+            {mode === "upwork" ? "Client Job Description" : "Topic / URL / Source Text"}
+          </label>
+
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={onCtrlEnter}
+            placeholder={mode === "upwork" ? "Paste the client job description here..." : "Enter a topic OR paste a public URL OR paste source text..."}
+            className="w-full h-44 p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-all text-gray-700"
+          />
+
+          {/* Upwork optional fields */}
+          {mode === "upwork" && (
+            <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                  <Briefcase className="w-4 h-4 text-purple-600" />
+                  Optional: Experience (Upwork only)
                 </label>
-
                 <textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={onCtrlEnter}
-                  placeholder="What do you want to post about? (e.g., 'digital marketing tips', 'career advice')"
-                  className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-black focus:border-black resize-none text-gray-700 mb-4"
+                  value={experience}
+                  onChange={(e) => setExperience(e.target.value)}
+                  placeholder="Example: I build WordPress tools, forms, custom plugins, etc."
+                  className="w-full h-24 p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-all text-gray-700"
                 />
-
-                {error && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <div className="flex items-start gap-2">
-                      <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
-                      <div className="text-sm text-red-700">{error}</div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-500">
-                    <span>Press <kbd className="px-2 py-1 bg-gray-100 rounded border border-gray-300 mx-1">Ctrl + Enter</kbd></span>
-                  </div>
-                  
-                  <button
-                    onClick={runAI}
-                    disabled={loading}
-                    className="bg-black hover:bg-gray-800 disabled:bg-gray-400 text-white font-medium py-2.5 px-6 rounded-lg flex items-center gap-2"
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-5 h-5" />
-                        Generate Post
-                      </>
-                    )}
-                  </button>
-                </div>
               </div>
 
-              {/* Live Editor */}
-              <div className="bg-white border border-gray-300 rounded-xl mb-6">
-                <div className="border-b border-gray-300 p-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Edit3 className="w-4 h-4 text-gray-600" />
-                    <span className="font-medium text-gray-700">Live Editor</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setShowEditor(!showEditor)}
-                      className="p-1 hover:bg-gray-100 rounded text-sm text-gray-600"
-                    >
-                      {showEditor ? 'Hide' : 'Show'}
-                    </button>
-                    <button
-                      onClick={() => setIsFullscreen(!isFullscreen)}
-                      className="p-1 hover:bg-gray-100 rounded"
-                    >
-                      {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                {showEditor && (
-                  <div className="p-4">
-                    {/* Formatting Toolbar */}
-                    <div className="flex flex-wrap gap-1 mb-3 p-2 bg-gray-50 rounded-lg">
-                      <button
-                        onClick={() => formatText('bold')}
-                        className="p-2 hover:bg-gray-200 rounded"
-                        title="Bold"
-                      >
-                        <Bold className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => formatText('italic')}
-                        className="p-2 hover:bg-gray-200 rounded"
-                        title="Italic"
-                      >
-                        <Italic className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => formatText('insertUnorderedList')}
-                        className="p-2 hover:bg-gray-200 rounded"
-                        title="Bullet List"
-                      >
-                        <List className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => formatText('insertOrderedList')}
-                        className="p-2 hover:bg-gray-200 rounded"
-                        title="Numbered List"
-                      >
-                        <ListOrdered className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => insertText('✓ ')}
-                        className="p-2 hover:bg-gray-200 rounded"
-                        title="Checkmark"
-                      >
-                        <Check className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => insertText('#')}
-                        className="p-2 hover:bg-gray-200 rounded"
-                        title="Hashtag"
-                      >
-                        <Hash className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => insertText('😊')}
-                        className="p-2 hover:bg-gray-200 rounded"
-                        title="Emoji"
-                      >
-                        <Smile className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => insertText('🔗')}
-                        className="p-2 hover:bg-gray-200 rounded"
-                        title="Link"
-                      >
-                        <Link2 className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    {/* Editor */}
-                    <div
-                      ref={editorRef}
-                      contentEditable
-                      onInput={handleEditorChange}
-                      className="w-full h-64 p-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-black focus:border-black resize-none overflow-y-auto bg-white text-gray-700 whitespace-pre-wrap"
-                      placeholder="Edit your post here..."
-                    />
-
-                    {/* Editor Actions */}
-                    <div className="flex items-center justify-between mt-3">
-                      <button
-                        onClick={saveEditedContent}
-                        className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm"
-                      >
-                        <Save className="w-4 h-4" />
-                        Save Changes
-                      </button>
-                      <div className="text-sm text-gray-500">
-                        Characters: {(editedOutput || output).length}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Copy Section */}
-              {(output || editedOutput) && (
-                <div className="bg-white border border-gray-300 rounded-xl p-5 mb-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-gray-800">Copy to Clipboard</h3>
-                    <button
-                      onClick={copyToClipboard}
-                      className="flex items-center gap-2 px-4 py-2.5 bg-black hover:bg-gray-800 text-white rounded-lg text-sm"
-                    >
-                      {copied ? (
-                        <>
-                          <Check className="w-4 h-4" /> Copied!
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-4 h-4" /> Copy Text
-                        </>
-                      )}
-                    </button>
-                  </div>
-                  <div className="whitespace-pre-wrap bg-gray-50 p-4 rounded-lg border border-gray-200 text-sm text-gray-700 overflow-y-auto max-h-40">
-                    {editedOutput || output}
-                  </div>
-                </div>
-              )}
-
-              {/* Auth Status */}
-              <div className="bg-white border border-gray-300 rounded-xl p-4">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-600">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full ${puterReady ? "bg-green-500" : "bg-gray-300"}`} />
-                      <span>{puterReady ? "AI Ready" : "Connecting..."}</span>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    {!signedIn ? (
-                      <button
-                        onClick={signInWithPuter}
-                        className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded border border-gray-300 flex items-center gap-2"
-                      >
-                        <LogIn className="w-3 h-3" />
-                        Sign In
-                      </button>
-                    ) : (
-                      <button
-                        onClick={signOutFromPuter}
-                        className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded border border-gray-300 flex items-center gap-2"
-                      >
-                        <LogOut className="w-3 h-3" />
-                        Sign Out
-                      </button>
-                    )}
-                  </div>
-                </div>
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                  <LinkIcon className="w-4 h-4 text-purple-600" />
+                  Optional: Portfolio links (Upwork only)
+                </label>
+                <textarea
+                  value={portfolioLinks}
+                  onChange={(e) => setPortfolioLinks(e.target.value)}
+                  placeholder="Paste links (one per line)."
+                  className="w-full h-24 p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-all text-gray-700"
+                />
               </div>
             </div>
+          )}
 
-            {/* Right Column - Preview (Hidden in fullscreen) */}
-            {!isFullscreen && (
-              <div>
-                <div className="bg-white border border-gray-300 rounded-xl p-5">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="font-semibold text-gray-800 text-lg">Post Preview</h3>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setViewMode("desktop")}
-                        className={`px-3 py-2 rounded-lg text-sm font-medium ${
-                          viewMode === "desktop" 
-                            ? "bg-black text-white" 
-                            : "bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200"
-                        }`}
-                      >
-                        Desktop
-                      </button>
-                      <button
-                        onClick={() => setViewMode("mobile")}
-                        className={`px-3 py-2 rounded-lg text-sm font-medium ${
-                          viewMode === "mobile" 
-                            ? "bg-black text-white" 
-                            : "bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200"
-                        }`}
-                      >
-                        Mobile
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Preview Container */}
-                  <div className={`${viewMode === 'mobile' ? 'flex justify-center' : ''}`}>
-                    {formatPostPreview()}
-                  </div>
-
-                  {/* Preview Note */}
-                  <div className="mt-4 text-sm text-gray-500 text-center">
-                    {viewMode === 'mobile' ? 'Mobile Preview (375px width)' : 'Desktop Preview'}
-                  </div>
-                </div>
+          {error && (
+            <div className="mt-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-red-700 whitespace-pre-wrap">{error}</div>
               </div>
+            </div>
+          )}
+
+          <button
+            onClick={runAI}
+            disabled={loading}
+            className="mt-4 w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-400 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-[1.02] disabled:scale-100 flex items-center justify-center gap-3 shadow-lg disabled:shadow-none"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-5 h-5" />
+                Generate
+              </>
             )}
-          </div>
-        ) : activeTab === "ideas" ? (
-          renderLinkedInIdeas()
-        ) : (
-          renderUpworkProposal()
-        )}
+          </button>
+        </div>
 
-        {/* Bottom CTA */}
-        <div className="mt-8 text-center">
-          <div className="bg-white border border-gray-300 rounded-xl p-5 inline-block">
-            <p className="text-gray-700 mb-3">Need help improving your content?</p>
-            <div className="flex flex-wrap gap-2 justify-center">
-              <button className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg border border-gray-300 text-sm">
-                Ask AI for suggestions
-              </button>
-              <button className="px-4 py-2 bg-black hover:bg-gray-800 text-white rounded-lg text-sm">
-                Get Content Insights
+        {/* Output */}
+        {output && (
+          <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-gray-200">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                  <Check className="w-6 h-6 text-green-600" />
+                  Output
+                </h2>
+                {mode === "article" && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Word count: <span className="font-medium">{wordCount(output)}</span>
+                  </p>
+                )}
+              </div>
+
+              <button
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(output);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  } catch {
+                    setError("Copy failed. Please manually select and copy.");
+                  }
+                }}
+                className="flex items-center gap-2 text-sm bg-gradient-to-r from-purple-100 to-indigo-100 hover:from-purple-200 hover:to-indigo-200 text-purple-700 px-4 py-2.5 rounded-lg transition-all font-medium shadow-sm"
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-4 h-4" /> Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" /> Copy
+                  </>
+                )}
               </button>
             </div>
+
+            <div className="prose prose-lg max-w-none">
+              <div className="whitespace-pre-wrap text-gray-700 leading-relaxed text-base">{output}</div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
 }
+
