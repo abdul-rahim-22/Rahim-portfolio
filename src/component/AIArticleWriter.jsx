@@ -6,13 +6,15 @@ import {
   Copy,
   Check,
   Link as LinkIcon,
-  LogIn,
-  LogOut,
   FileText,
   Briefcase,
+  Code,
+  Terminal,
+  Bug,
 } from "lucide-react";
 
-const PRIMARY_MODEL = "allenai/olmo-31b-instruct-think"; // OpenRouter model ID
+const PRIMARY_MODEL = "allenai/olmo-31b-instruct-think";
+const OPENROUTER_API_KEY = "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";
 
 function isProbablyUrl(text) {
   const t = text.trim();
@@ -53,22 +55,13 @@ function stringifyError(err) {
   }
 }
 
-async function waitForPuter(timeoutMs = 8000) {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    if (typeof window !== "undefined" && window.puter) return window.puter;
-    await new Promise((r) => setTimeout(r, 60));
-  }
-  return null;
-}
-
 // OpenRouter API helper function
-async function callOpenRouterAPI(messages, model, temperature, maxTokens, apiKey) {
+async function callOpenRouterAPI(messages, model, temperature, maxTokens) {
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`,
+      "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
       "HTTP-Referer": window.location.hostname || "localhost",
       "X-Title": "AI Writer Puter Stable"
     },
@@ -89,86 +82,92 @@ async function callOpenRouterAPI(messages, model, temperature, maxTokens, apiKey
   return await response.json();
 }
 
+// Debug helper: find coding errors
+function findCodingErrors(text) {
+  const errors = [];
+  const lines = text.split('\n');
+  
+  // Common JavaScript/HTML errors
+  const errorPatterns = [
+    { pattern: /console\.log/g, description: "Console.log statements found", severity: "warning" },
+    { pattern: /debugger/g, description: "Debugger statements found", severity: "warning" },
+    { pattern: /==[^=]/g, description: "Use === instead of == for comparison", severity: "error" },
+    { pattern: /<[^>]*$/g, description: "Unclosed HTML tags", severity: "error" },
+    { pattern: /^[^<]*<\/[^>]+>/g, description: "HTML tag without opening tag", severity: "error" },
+    { pattern: /<script[^>]*>.*?<\/script>/gis, description: "Inline script tags detected", severity: "warning" },
+    { pattern: /<style[^>]*>.*?<\/style>/gis, description: "Inline style tags detected", severity: "warning" },
+    { pattern: /onclick\s*=/gi, description: "Inline onclick handlers", severity: "warning" },
+    { pattern: /href\s*=\s*["']javascript:/gi, description: "JavaScript href links", severity: "error" },
+    { pattern: /<a[^>]*href\s*=\s*["'][^"']*["'][^>]*>/gi, description: "External links without target='_blank'", severity: "info" },
+    { pattern: /<input[^>]*type\s*=\s*["']submit["'][^>]*>/gi, description: "Submit buttons should have form attribute", severity: "info" },
+    { pattern: /<form[^>]*>[^<]*(?!<\/form>)/gi, description: "Form without closing tag", severity: "error" },
+    { pattern: /class\s*=\s*["'][^"']*["'][^>]*>/gi, description: "Missing class attribute", severity: "info" },
+    { pattern: /id\s*=\s*["'][^"']*["'][^>]*>/gi, description: "Missing id attribute", severity: "info" },
+    { pattern: /alt\s*=\s*["'][^"']*["'][^>]*>/gi, description: "Missing alt attribute for images", severity: "error" },
+    { pattern: /<img[^>]*(?!alt\s*=\s*["'])/gi, description: "Image without alt attribute", severity: "error" },
+    { pattern: /<video[^>]*(?!controls)/gi, description: "Video without controls", severity: "info" },
+    { pattern: /<audio[^>]*(?!controls)/gi, description: "Audio without controls", severity: "info" },
+    { pattern: /<label[^>]*>[^<]*(?!<\/label>)/gi, description: "Label without closing tag", severity: "error" },
+    { pattern: /<button[^>]*>[^<]*(?!<\/button>)/gi, description: "Button without closing tag", severity: "error" },
+    { pattern: /<div[^>]*>[^<]*(?!<\/div>)/gi, description: "Div without closing tag", severity: "error" },
+    { pattern: /<span[^>]*>[^<]*(?!<\/span>)/gi, description: "Span without closing tag", severity: "error" },
+    { pattern: /<p[^>]*>[^<]*(?!<\/p>)/gi, description: "Paragraph without closing tag", severity: "error" },
+    { pattern: /<h[1-6][^>]*>[^<]*(?!<\/h[1-6]>)/gi, description: "Heading without closing tag", severity: "error" },
+    { pattern: /<li[^>]*>[^<]*(?!<\/li>)/gi, description: "List item without closing tag", severity: "error" },
+    { pattern: /<ul[^>]*>[^<]*(?!<\/ul>)/gi, description: "Unordered list without closing tag", severity: "error" },
+    { pattern: /<ol[^>]*>[^<]*(?!<\/ol>)/gi, description: "Ordered list without closing tag", severity: "error" },
+    { pattern: /<table[^>]*>[^<]*(?!<\/table>)/gi, description: "Table without closing tag", severity: "error" },
+    { pattern: /<tr[^>]*>[^<]*(?!<\/tr>)/gi, description: "Table row without closing tag", severity: "error" },
+    { pattern: /<td[^>]*>[^<]*(?!<\/td>)/gi, description: "Table cell without closing tag", severity: "error" },
+    { pattern: /<th[^>]*>[^<]*(?!<\/th>)/gi, description: "Table header without closing tag", severity: "error" },
+    { pattern: /<form[^>]*>[^<]*(?!<\/form>)/gi, description: "Form without closing tag", severity: "error" },
+    { pattern: /<input[^>]*type\s*=\s*["']text["'][^>]*>/gi, description: "Input without label", severity: "warning" },
+    { pattern: /<input[^>]*type\s*=\s*["']email["'][^>]*>/gi, description: "Email input without validation", severity: "warning" },
+    { pattern: /<input[^>]*type\s*=\s*["']password["'][^>]*>/gi, description: "Password input without validation", severity: "warning" },
+    { pattern: /<input[^>]*type\s*=\s*["']number["'][^>]*>/gi, description: "Number input without min/max", severity: "warning" },
+    { pattern: /<input[^>]*type\s*=\s*["']date["'][^>]*>/gi, description: "Date input without validation", severity: "warning" },
+    { pattern: /<input[^>]*type\s*=\s*["']file["'][^>]*>/gi, description: "File input without accept attribute", severity: "warning" },
+    { pattern: /<a[^>]*href\s*=\s*["']#["'][^>]*>/gi, description: "Link with hash href", severity: "warning" },
+    { pattern: /<a[^>]*href\s*=\s*["'][^"']*\.[a-z]{2,}["'][^>]*>/gi, description: "External link without rel='noopener'", severity: "warning" },
+    { pattern: /<meta[^>]*>/gi, description: "Missing meta tags", severity: "info" },
+    { pattern: /<title[^>]*>/gi, description: "Missing page title", severity: "info" },
+    { pattern: /<body[^>]*>/gi, description: "Missing body tag", severity: "info" },
+    { pattern: /<head[^>]*>/gi, description: "Missing head tag", severity: "info" },
+    { pattern: /<html[^>]*>/gi, description: "Missing html tag", severity: "info" },
+  ];
+
+  lines.forEach((line, index) => {
+    errorPatterns.forEach(({ pattern, description, severity }) => {
+      const matches = line.match(pattern);
+      if (matches) {
+        errors.push({
+          line: index + 1,
+          column: line.search(pattern) + 1,
+          message: description,
+          severity: severity,
+          code: line.trim()
+        });
+      }
+    });
+  });
+
+  return errors;
+}
+
 export default function AIWriterPuterStable() {
-  const [mode, setMode] = useState("article"); // article | linkedin | upwork
+  const [mode, setMode] = useState("article"); // article | linkedin | upwork | debug
   const [input, setInput] = useState("");
   const [experience, setExperience] = useState("");
   const [portfolioLinks, setPortfolioLinks] = useState("");
-  const [openRouterApiKey, setOpenRouterApiKey] = useState("");
 
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const [puterReady, setPuterReady] = useState(false);
-  const [signedIn, setSignedIn] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [debugResult, setDebugResult] = useState([]);
 
   const modelUsed = useMemo(() => PRIMARY_MODEL, []);
-
-  const ensurePuter = async () => {
-    setError("");
-    const puter = await waitForPuter();
-    if (!puter) {
-      setPuterReady(false);
-      throw new Error(
-        "Puter SDK not found. Make sure you added this in index.html:\n<script src=\"https://js.puter.com/v2/?v=2\" defer></script>"
-      );
-    }
-    setPuterReady(true);
-    return puter;
-  };
-
-  const signInWithPuter = async () => {
-    setError("");
-    const puter = await ensurePuter();
-
-    if (puter?.ui?.authenticateWithPuter) {
-      await puter.ui.authenticateWithPuter();
-      setSignedIn(true);
-      return;
-    }
-    if (puter?.auth?.signIn) {
-      await puter.auth.signIn();
-      setSignedIn(true);
-      return;
-    }
-
-    throw new Error("Puter sign-in method not available.");
-  };
-
-  const signOutFromPuter = async () => {
-    setError("");
-    const puter = await ensurePuter();
-    try {
-      if (puter?.auth?.signOut) await puter.auth.signOut();
-    } finally {
-      setSignedIn(false);
-    }
-  };
-
-  const maybeFetchUrlText = async (puter, raw) => {
-    const trimmed = raw.trim();
-
-    // Upwork mode: URL fetching disabled
-    if (mode === "upwork") {
-      return { sourceText: trimmed.slice(0, 12000), fetchedFromUrl: false };
-    }
-
-    if (!isProbablyUrl(trimmed)) {
-      return { sourceText: trimmed.slice(0, 12000), fetchedFromUrl: false };
-    }
-
-    // Puter net.fetch is CORS-free (but requires SDK working properly)
-    const res = await puter.net.fetch(trimmed);
-    const html = await res.text();
-    const text = htmlToReadableText(html);
-
-    return {
-      sourceText: `URL: ${trimmed}\n\nPAGE TEXT:\n${text.slice(0, 12000)}`,
-      fetchedFromUrl: true,
-    };
-  };
 
   const buildPrompts = (sourceText) => {
     const common =
@@ -226,10 +225,10 @@ ${common}
       };
     }
 
-    // upwork
-    return {
-      system: "You are an Upwork proposal writer. Write concise, specific proposals in simple English matching the client needs.",
-      user: `
+    if (mode === "upwork") {
+      return {
+        system: "You are an Upwork proposal writer. Write concise, specific proposals in simple English matching the client needs.",
+        user: `
 Client job post / requirements:
 ${sourceText}
 
@@ -277,6 +276,10 @@ ${common}
 `,
       maxTokens: 1100,
     };
+    }
+
+    // debug mode
+    return { system: "", user: "", maxTokens: 1 };
   };
 
   const runAI = async () => {
@@ -290,23 +293,20 @@ ${common}
       return;
     }
 
-    if (!openRouterApiKey.trim()) {
-      setError("Please enter your OpenRouter API key.");
-      return;
-    }
-
     setLoading(true);
     try {
-      const puter = await ensurePuter();
-
-      if (!signedIn) {
-        await signInWithPuter();
-      }
-
-      const { sourceText } = await maybeFetchUrlText(puter, trimmed);
+      const { sourceText } = await maybeFetchUrlText(trimmed);
       const { system, user, maxTokens } = buildPrompts(sourceText);
 
-      // Use OpenRouter API instead of Puter AI
+      if (mode === "debug") {
+        // Debug mode: find coding errors
+        const errors = findCodingErrors(sourceText);
+        setDebugResult(errors);
+        setLoading(false);
+        return;
+      }
+
+      // Use OpenRouter API
       const response = await callOpenRouterAPI(
         [
           { role: "system", content: system },
@@ -314,8 +314,7 @@ ${common}
         ],
         modelUsed,
         0.6,
-        maxTokens,
-        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
+        maxTokens
       );
 
       let text = extractChatText(response);
@@ -335,8 +334,7 @@ ${common}
             ],
             modelUsed,
             0.4,
-            1900,
-            openRouterApiKey
+            1900
           );
 
           const fixed = extractChatText(response2);
@@ -349,6 +347,33 @@ ${common}
       setError(stringifyError(e));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const maybeFetchUrlText = async (raw) => {
+    const trimmed = raw.trim();
+
+    // Upwork mode: URL fetching disabled
+    if (mode === "upwork") {
+      return { sourceText: trimmed.slice(0, 12000), fetchedFromUrl: false };
+    }
+
+    if (!isProbablyUrl(trimmed)) {
+      return { sourceText: trimmed.slice(0, 12000), fetchedFromUrl: false };
+    }
+
+    // Fetch URL content using fetch API
+    try {
+      const response = await fetch(trimmed);
+      const html = await response.text();
+      const text = htmlToReadableText(html);
+
+      return {
+        sourceText: `URL: ${trimmed}\n\nPAGE TEXT:\n${text.slice(0, 12000)}`,
+        fetchedFromUrl: true,
+      };
+    } catch (error) {
+      return { sourceText: trimmed.slice(0, 12000), fetchedFromUrl: false };
     }
   };
 
@@ -374,80 +399,12 @@ ${common}
 
           <p className="text-gray-600">Provide Your Idea</p>
 
-          {mode !== "upwork" && (
+          {mode !== "upwork" && mode !== "debug" && (
             <p className="text-xs text-gray-500 mt-2 flex items-center justify-center gap-2">
               <LinkIcon className="w-4 h-4" />
               Paste a public URL to auto-fetch page text.
             </p>
           )}
-        </div>
-
-        {/* OpenRouter API Key Input */}
-        <div className="bg-white rounded-2xl shadow-xl p-4 mb-6 border border-gray-100">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-            <div className="flex-1">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                OpenRouter API Key
-              </label>
-              <input
-                type="password"
-                value={openRouterApiKey}
-                onChange={(e) => setOpenRouterApiKey(e.target.value)}
-                placeholder="sk-or-..."
-                className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-700"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Get your key from{" "}
-                <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">
-                  openrouter.ai/keys
-                </a>
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Auth bar */}
-        <div className="bg-white rounded-2xl shadow-xl p-4 mb-6 border border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="text-sm text-gray-700">
-            <div className="flex items-center gap-2">
-              <span className={`inline-block w-2.5 h-2.5 rounded-full ${puterReady ? "bg-green-500" : "bg-gray-300"}`} />
-              <span>Status: {puterReady ? "Loaded" : "Not loaded"}</span>
-            </div>
-            <div className="flex items-center gap-2 mt-1">
-              <span className={`inline-block w-2.5 h-2.5 rounded-full ${signedIn ? "bg-green-500" : "bg-gray-300"}`} />
-              <span>Sign-in: {signedIn ? "Signed in" : "Not signed in"}</span>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={async () => {
-                try {
-                  await signInWithPuter();
-                } catch (e) {
-                  setError(stringifyError(e));
-                }
-              }}
-              className="inline-flex items-center gap-2 text-sm bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-4 py-2 rounded-lg transition-colors font-medium shadow-sm"
-            >
-              <LogIn className="w-4 h-4" />
-              Sign in
-            </button>
-
-            <button
-              onClick={async () => {
-                try {
-                  await signOutFromPuter();
-                } catch (e) {
-                  setError(stringifyError(e));
-                }
-              }}
-              className="inline-flex items-center gap-2 text-sm bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg transition-colors font-medium border"
-            >
-              <LogOut className="w-4 h-4" />
-              Sign out
-            </button>
-          </div>
         </div>
 
         {/* Mode tabs */}
@@ -479,6 +436,16 @@ ${common}
             >
               Upwork Proposal
             </button>
+
+            <button
+              onClick={() => setMode("debug")}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
+                mode === "debug" ? "bg-purple-600 text-white" : "bg-gray-50 hover:bg-gray-100 text-gray-700"
+              }`}
+            >
+              <Bug className="w-4 h-4 mr-1 inline" />
+              Debug Code
+            </button>
           </div>
         </div>
 
@@ -486,14 +453,24 @@ ${common}
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border border-gray-100">
           <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
             <FileText className="w-4 h-4 text-purple-600" />
-            {mode === "upwork" ? "Client Job Description" : "Topic / URL / Source Text"}
+            {mode === "upwork" 
+              ? "Client Job Description" 
+              : mode === "debug"
+              ? "Code to Debug"
+              : "Topic / URL / Source Text"}
           </label>
 
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onCtrlEnter}
-            placeholder={mode === "upwork" ? "Paste the client job description here..." : "Enter a topic OR paste a public URL OR paste source text..."}
+            placeholder={
+              mode === "upwork" 
+                ? "Paste the client job description here..." 
+                : mode === "debug"
+                ? "Paste your HTML/CSS/JavaScript code here to find errors..."
+                : "Enter a topic OR paste a public URL OR paste source text..."
+            }
             className="w-full h-44 p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-all text-gray-700"
           />
 
@@ -555,6 +532,54 @@ ${common}
             )}
           </button>
         </div>
+
+        {/* Debug Results */}
+        {mode === "debug" && debugResult.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <Bug className="w-5 h-5 text-red-600" />
+                Debug Results
+              </h3>
+              <span className="text-sm text-gray-600">{debugResult.length} errors found</span>
+            </div>
+            
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {debugResult.map((error, index) => (
+                <div key={index} className={`p-3 rounded-lg border-l-4 ${
+                  error.severity === 'error' ? 'bg-red-50 border-red-500' :
+                  error.severity === 'warning' ? 'bg-yellow-50 border-yellow-500' :
+                  'bg-blue-50 border-blue-500'
+                }`}>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`inline-block w-2 h-2 rounded-full ${
+                          error.severity === 'error' ? 'bg-red-500' :
+                          error.severity === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+                        }`} />
+                        <span className="text-sm font-semibold text-gray-800">{error.message}</span>
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          error.severity === 'error' ? 'bg-red-100 text-red-800' :
+                          error.severity === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                          {error.severity.toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-600 mb-2">
+                        Line {error.line}, Column {error.column}
+                      </div>
+                      <div className="bg-gray-50 p-2 rounded text-xs font-mono">
+                        {error.code}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Output */}
         {output && (
