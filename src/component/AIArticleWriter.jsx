@@ -1,6 +1,3 @@
-I'll update your code to use the OpenRouter.ai API with the "AllenAI: Olmo 3.1 32B Think" model. Here's the complete modified code:
-
-```javascript
 import React, { useMemo, useState } from "react";
 import {
   Loader2,
