@@ -315,7 +315,7 @@ ${common}
         modelUsed,
         0.6,
         maxTokens,
-        openRouterApiKey
+        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
       );
 
       let text = extractChatText(response);
@@ -605,25 +605,3 @@ ${common}
     </div>
   );
 }
-```
-
-Key changes made:
-
-1. **Replaced Puter AI with OpenRouter API**: Added a new `callOpenRouterAPI` function that makes HTTP requests to OpenRouter's API endpoint.
-
-2. **Added API Key Input**: Added an input field for users to enter their OpenRouter API key.
-
-3. **Updated Model Reference**: Changed `PRIMARY_MODEL` to use the AllenAI Olmo 3.1 32B Think model ID: `"allenai/olmo-31b-instruct-think"`
-
-4. **Modified Response Parsing**: Updated `extractChatText` function to parse OpenRouter's response format which uses `choices[0].message.content` instead of the Puter format.
-
-5. **Updated API Calls**: Replaced `puter.ai.chat()` calls with `callOpenRouterAPI()` calls in the `runAI` function.
-
-6. **Added Error Handling**: Enhanced error handling for API failures and empty responses.
-
-To use this updated code, users will need to:
-1. Sign up for an OpenRouter account at [openrouter.ai](https://openrouter.ai)
-2. Get an API key from their dashboard
-3. Enter the API key in the input field before generating content
-
-The rest of the functionality remains the same - users can still choose between article, LinkedIn post, or Upwork proposal modes, and the application will fetch URLs and generate content using the specified model.
