@@ -24,11 +24,12 @@ async function waitForPuter(timeoutMs = 8000) {
 }
 
 export default function SimpleAIChat() {
+  const [mode, setMode] = useState("chat");
   const [messages, setMessages] = useState([
     {
       id: 1,
       role: "assistant",
-      content: "Hello! I'm your AI assistant. How can I help you today?",
+      content: "Hello! I'm your AI assistant. Choose a mode above and let's create something amazing!",
       timestamp: new Date(),
     },
   ]);
@@ -41,6 +42,50 @@ export default function SimpleAIChat() {
   
   const chatContainerRef = useRef(null);
   const conversationHistory = useRef([]);
+
+  const getSystemPrompt = () => {
+    if (mode === "linkedin") {
+      return `You are an expert LinkedIn content creator. Create engaging, professional LinkedIn posts that:
+
+- Start with a strong hook (first line must grab attention)
+- Use short paragraphs (2-3 lines each) for easy reading
+- Include 3-5 bullet points with actionable insights
+- End with a clear call-to-action (CTA)
+- Add 3-6 relevant hashtags at the end
+- Keep tone professional yet conversational
+- Length: 150-250 words
+- Format in clean, readable structure
+
+Focus on value, authenticity, and engagement. Make it shareable and relatable to professionals.`;
+    }
+
+    if (mode === "upwork") {
+      return `You are an expert Upwork proposal writer. Write winning proposals that:
+
+STRUCTURE:
+1. Personalized greeting with client's name (if available)
+2. Opening hook that shows you understand their problem
+3. Brief introduction (1-2 sentences about your relevant experience)
+4. Clear bullet points listing their key requirements
+5. Your proposed solution/approach (3-4 steps)
+6. Relevant proof/examples of past work
+7. 2-3 clarifying questions
+8. Strong closing with clear next step
+9. Professional sign-off
+
+TONE:
+- Professional but friendly
+- Confident without being arrogant
+- Focus on THEIR needs, not your skills
+- Show you read the job post carefully
+- Keep it concise (300-400 words max)
+
+Make every proposal personalized and value-focused.`;
+    }
+
+    // Default chat mode
+    return `You are a helpful, friendly AI assistant. Have natural conversations and provide useful, accurate information. Be concise but thorough in your responses.`;
+  };
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -106,8 +151,14 @@ export default function SimpleAIChat() {
         await signInWithPuter();
       }
 
+      const systemPrompt = getSystemPrompt();
+      const chatMessages = [
+        { role: "system", content: systemPrompt },
+        ...conversationHistory.current
+      ];
+
       const resp = await puter.ai.chat(
-        conversationHistory.current,
+        chatMessages,
         false,
         {
           model: PRIMARY_MODEL,
@@ -158,11 +209,17 @@ export default function SimpleAIChat() {
   };
 
   const clearChat = () => {
+    const welcomeMsg = mode === "linkedin" 
+      ? "Ready to create engaging LinkedIn posts! Share your topic or idea."
+      : mode === "upwork"
+      ? "Ready to write winning Upwork proposals! Paste the job description or tell me about the project."
+      : "Hello! I'm your AI assistant. Choose a mode above and let's create something amazing!";
+      
     setMessages([
       {
         id: 1,
         role: "assistant",
-        content: "Hello! I'm your AI assistant. How can I help you today?",
+        content: welcomeMsg,
         timestamp: new Date(),
       },
     ]);
@@ -192,9 +249,9 @@ export default function SimpleAIChat() {
               </div>
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  AI Chat Assistant
+                  AI Content Assistant
                 </h1>
-                <p className="text-gray-600 text-sm">Chat naturally with AI</p>
+                <p className="text-gray-600 text-sm">Chat • LinkedIn Posts • Upwork Proposals</p>
               </div>
             </div>
 
@@ -224,6 +281,56 @@ export default function SimpleAIChat() {
               )}
             </div>
           </div>
+
+          {/* Mode Selector */}
+          <div className="bg-white rounded-xl shadow-sm border p-4 mb-4">
+            <div className="flex justify-center gap-2 flex-wrap">
+              <button
+                onClick={() => {
+                  setMode("chat");
+                  clearChat();
+                }}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  mode === "chat"
+                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                }`}
+              >
+                💬 Chat
+              </button>
+              <button
+                onClick={() => {
+                  setMode("linkedin");
+                  clearChat();
+                }}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  mode === "linkedin"
+                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                }`}
+              >
+                💼 LinkedIn Post
+              </button>
+              <button
+                onClick={() => {
+                  setMode("upwork");
+                  clearChat();
+                }}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  mode === "upwork"
+                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                }`}
+              >
+                📋 Upwork Proposal
+              </button>
+            </div>
+            <p className="text-center text-xs text-gray-500 mt-3">
+              Current mode: <span className="font-semibold text-blue-600">
+                {mode === "chat" ? "💬 General Chat" : mode === "linkedin" ? "💼 LinkedIn Post Generator" : "📋 Upwork Proposal Writer"}
+              </span>
+            </p>
+          </div>
         </div>
 
         {/* Chat Container */}
@@ -232,7 +339,9 @@ export default function SimpleAIChat() {
           <div className="border-b p-4 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50">
             <div className="flex items-center gap-2">
               <Bot className="w-5 h-5 text-blue-600" />
-              <h2 className="font-semibold text-gray-800">AI Assistant</h2>
+              <h2 className="font-semibold text-gray-800">
+                {mode === "chat" ? "AI Assistant" : mode === "linkedin" ? "LinkedIn Post Creator" : "Upwork Proposal Writer"}
+              </h2>
             </div>
             <button
               onClick={clearChat}
@@ -335,7 +444,13 @@ export default function SimpleAIChat() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyPress}
-                placeholder="Type your message here..."
+                placeholder={
+                  mode === "chat"
+                    ? "Type your message here..."
+                    : mode === "linkedin"
+                    ? "What's your LinkedIn post about? (e.g., 'Write about remote work benefits')"
+                    : "Paste the Upwork job description or describe the project..."
+                }
                 className="flex-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white"
                 rows="2"
               />
