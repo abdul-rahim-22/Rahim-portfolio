@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Loader2,
   Sparkles,
@@ -13,6 +13,9 @@ import {
   Bug,
   Key,
   Shield,
+  RefreshCw,
+  Wifi,
+  WifiOff
 } from "lucide-react";
 
 const PRIMARY_MODEL = "allenai/olmo-31b-instruct-think";
@@ -57,7 +60,7 @@ function stringifyError(err) {
   }
 }
 
-// OpenRouter API helper function with improved error handling
+// OpenRouter API helper function with proper authentication
 async function callOpenRouterAPI(messages, model, temperature, maxTokens) {
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -65,27 +68,37 @@ async function callOpenRouterAPI(messages, model, temperature, maxTokens) {
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-        "HTTP-Referer": window.location.hostname || "localhost",
-        "X-Title": "AI Writer Puter Stable",
-        "User-Agent": "AI-Writer/1.0"
+        "HTTP-Referer": "https://localhost", // Required by OpenRouter
+        "X-Title": "AI Writer Puter Stable", // Required by OpenRouter
+        "User-Agent": "AI-Writer/1.0",
+        "Accept": "application/json"
       },
       body: JSON.stringify({
         model: model,
         messages: messages,
         temperature: temperature,
         max_tokens: maxTokens,
-        stream: false
+        stream: false,
+        // Additional OpenRouter-specific parameters
+        provider: {
+          order: ["OpenAI", "Anthropic", "Google"]
+        }
       })
     });
 
+    console.log("OpenRouter Response Status:", response.status);
+    console.log("OpenRouter Response Headers:", Object.fromEntries(response.headers.entries()));
+
     if (!response.ok) {
       const errorText = await response.text();
+      console.error("OpenRouter Error Response:", errorText);
+      
       let errorMessage = `HTTP ${response.status}`;
       
       try {
         const errorJson = JSON.parse(errorText);
-        errorMessage = errorJson.error?.message || errorText;
-      } catch {
+        errorMessage = errorJson.error?.message || errorJson.message || errorText;
+      } catch (parseError) {
         errorMessage = errorText;
       }
       
@@ -94,6 +107,7 @@ async function callOpenRouterAPI(messages, model, temperature, maxTokens) {
 
     return await response.json();
   } catch (networkError) {
+    console.error("Network Error:", networkError);
     if (networkError.name === 'TypeError' && networkError.message.includes('fetch')) {
       throw new Error("Network error: Please check your internet connection and try again.");
     }
@@ -106,7 +120,6 @@ function findCodingErrors(text) {
   const errors = [];
   const lines = text.split('\n');
   
-  // Common JavaScript/HTML errors
   const errorPatterns = [
     { pattern: /console\.log/g, description: "Console.log statements found", severity: "warning" },
     { pattern: /debugger/g, description: "Debugger statements found", severity: "warning" },
@@ -117,9 +130,6 @@ function findCodingErrors(text) {
     { pattern: /<style[^>]*>.*?<\/style>/gis, description: "Inline style tags detected", severity: "warning" },
     { pattern: /onclick\s*=/gi, description: "Inline onclick handlers", severity: "warning" },
     { pattern: /href\s*=\s*["']javascript:/gi, description: "JavaScript href links", severity: "error" },
-    { pattern: /<a[^>]*href\s*=\s*["'][^"']*["'][^>]*>/gi, description: "External links without target='_blank'", severity: "info" },
-    { pattern: /<input[^>]*type\s*=\s*["']submit["'][^>]*>/gi, description: "Submit buttons should have form attribute", severity: "info" },
-    { pattern: /<form[^>]*>[^<]*(?!<\/form>)/gi, description: "Form without closing tag", severity: "error" },
     { pattern: /<img[^>]*(?!alt\s*=\s*["'])/gi, description: "Image without alt attribute", severity: "error" },
     { pattern: /<label[^>]*>[^<]*(?!<\/label>)/gi, description: "Label without closing tag", severity: "error" },
     { pattern: /<button[^>]*>[^<]*(?!<\/button>)/gi, description: "Button without closing tag", severity: "error" },
@@ -137,9 +147,6 @@ function findCodingErrors(text) {
     { pattern: /<input[^>]*type\s*=\s*["']text["'][^>]*>/gi, description: "Input without label", severity: "warning" },
     { pattern: /<input[^>]*type\s*=\s*["']email["'][^>]*>/gi, description: "Email input without validation", severity: "warning" },
     { pattern: /<input[^>]*type\s*=\s*["']password["'][^>]*>/gi, description: "Password input without validation", severity: "warning" },
-    { pattern: /<input[^>]*type\s*=\s*["']number["'][^>]*>/gi, description: "Number input without min/max", severity: "warning" },
-    { pattern: /<input[^>]*type\s*=\s*["']date["'][^>]*>/gi, description: "Date input without validation", severity: "warning" },
-    { pattern: /<input[^>]*type\s*=\s*["']file["'][^>]*>/gi, description: "File input without accept attribute", severity: "warning" },
     { pattern: /<a[^>]*href\s*=\s*["']#["'][^>]*>/gi, description: "Link with hash href", severity: "warning" },
     { pattern: /<a[^>]*href\s*=\s*["'][^"']*\.[a-z]{2,}["'][^>]*>/gi, description: "External link without rel='noopener'", severity: "warning" },
   ];
@@ -174,9 +181,24 @@ export default function AIWriterPuterStable() {
 
   const [copied, setCopied] = useState(false);
   const [debugResult, setDebugResult] = useState([]);
-  const [apiKeyStatus, setApiKeyStatus] = useState("unknown"); // unknown, valid, invalid
+  const [apiKeyStatus, setApiKeyStatus] = useState("unknown"); // unknown, valid, invalid, checking
+  const [networkStatus, setNetworkStatus] = useState(navigator.onLine);
 
   const modelUsed = useMemo(() => PRIMARY_MODEL, []);
+
+  // Monitor network status
+  useEffect(() => {
+    const handleOnline = () => setNetworkStatus(true);
+    const handleOffline = () => setNetworkStatus(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const buildPrompts = (sourceText) => {
     const common =
@@ -292,6 +314,7 @@ ${common}
   };
 
   const checkApiKey = async () => {
+    setApiKeyStatus("checking");
     try {
       const response = await fetch("https://openrouter.ai/api/v1/auth", {
         method: "GET",
@@ -309,6 +332,7 @@ ${common}
         return false;
       }
     } catch (error) {
+      console.error("API Key Check Error:", error);
       setApiKeyStatus("invalid");
       return false;
     }
@@ -319,6 +343,12 @@ ${common}
     setOutput("");
     setCopied(false);
 
+    // Check network status
+    if (!networkStatus) {
+      setError("No internet connection. Please check your network and try again.");
+      return;
+    }
+
     const trimmed = input.trim();
     if (!trimmed) {
       setError(mode === "upwork" ? "Please paste the client job description." : "Please enter a topic, a URL, or source text.");
@@ -327,12 +357,14 @@ ${common}
 
     setLoading(true);
     try {
-      // Check API key validity
+      // Check API key validity if not already checked
       if (apiKeyStatus === "unknown") {
         const isValid = await checkApiKey();
         if (!isValid) {
           throw new Error("API key is invalid or expired. Please check your OpenRouter API key.");
         }
+      } else if (apiKeyStatus === "invalid") {
+        throw new Error("API key is invalid. Please refresh the page and try again.");
       }
 
       const { sourceText } = await maybeFetchUrlText(trimmed);
@@ -384,6 +416,7 @@ ${common}
 
       setOutput(text);
     } catch (e) {
+      console.error("Generation Error:", e);
       setError(stringifyError(e));
     } finally {
       setLoading(false);
@@ -413,6 +446,7 @@ ${common}
         fetchedFromUrl: true,
       };
     } catch (error) {
+      console.error("URL Fetch Error:", error);
       return { sourceText: trimmed.slice(0, 12000), fetchedFromUrl: false };
     }
   };
@@ -447,25 +481,54 @@ ${common}
           )}
         </div>
 
-        {/* API Key Status */}
+        {/* Status Bar */}
         <div className="bg-white rounded-2xl shadow-xl p-4 mb-6 border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Key className="w-5 h-5 text-purple-600" />
-              <span className="text-sm font-semibold text-gray-700">OpenRouter API:</span>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                apiKeyStatus === "valid" 
-                  ? "bg-green-100 text-green-800 border border-green-200" 
-                  : apiKeyStatus === "invalid"
-                  ? "bg-red-100 text-red-800 border border-red-200"
-                  : "bg-gray-100 text-gray-800 border border-gray-200"
-              }`}>
-                {apiKeyStatus === "valid" ? "Active" : apiKeyStatus === "invalid" ? "Invalid" : "Checking..."}
-              </span>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex flex-wrap gap-3">
+              <div className="flex items-center gap-2">
+                <Key className="w-5 h-5 text-purple-600" />
+                <span className="text-sm font-semibold text-gray-700">OpenRouter API:</span>
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  apiKeyStatus === "valid" 
+                    ? "bg-green-100 text-green-800 border border-green-200" 
+                    : apiKeyStatus === "invalid"
+                    ? "bg-red-100 text-red-800 border border-red-200"
+                    : apiKeyStatus === "checking"
+                    ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
+                    : "bg-gray-100 text-gray-800 border border-gray-200"
+                }`}>
+                  {apiKeyStatus === "valid" ? "Active" : apiKeyStatus === "invalid" ? "Invalid" : apiKeyStatus === "checking" ? "Checking..." : "Unknown"}
+                </span>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                {networkStatus ? (
+                  <Wifi className="w-5 h-5 text-green-600" />
+                ) : (
+                  <WifiOff className="w-5 h-5 text-red-600" />
+                )}
+                <span className="text-sm font-semibold text-gray-700">Network:</span>
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  networkStatus 
+                    ? "bg-green-100 text-green-800 border border-green-200" 
+                    : "bg-red-100 text-red-800 border border-red-200"
+                }`}>
+                  {networkStatus ? "Online" : "Offline"}
+                </span>
+              </div>
             </div>
+            
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Shield className="w-4 h-4" />
               <span>Model: {modelUsed}</span>
+              <button
+                onClick={checkApiKey}
+                disabled={apiKeyStatus === "checking"}
+                className="ml-2 flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800"
+              >
+                <RefreshCw className={`w-3 h-3 ${apiKeyStatus === "checking" ? "animate-spin" : ""}`} />
+                Refresh
+              </button>
             </div>
           </div>
         </div>
@@ -579,7 +642,7 @@ ${common}
 
           <button
             onClick={runAI}
-            disabled={loading || apiKeyStatus === "invalid"}
+            disabled={loading || apiKeyStatus === "invalid" || !networkStatus}
             className="mt-4 w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-400 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-[1.02] disabled:scale-100 flex items-center justify-center gap-3 shadow-lg disabled:shadow-none"
           >
             {loading ? (
