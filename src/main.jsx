@@ -31,7 +31,7 @@ createRoot(document.getElementById('root')).render(
   <Portfolio2/>
   <Portfolio/>
   <Processs/>
-  {/* <AIArticleWriter/>  */}
+  <AIArticleWriter/>
   <Footer/>
   </>
  
