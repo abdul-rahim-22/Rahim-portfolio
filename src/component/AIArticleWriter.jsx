@@ -10,20 +10,10 @@ import {
   LogOut,
   FileText,
   Briefcase,
-  Bold,
-  Italic,
-  Underline,
-  List,
-  ListOrdered,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  Undo,
-  Redo,
-  Save,
-  FolderOpen,
-  Monitor,
-  Smartphone,
+  Send,
+  User,
+  Bot,
+  Trash2,
 } from "lucide-react";
 
 const PRIMARY_MODEL = "gpt-4o-mini";
@@ -31,6 +21,10 @@ const PRIMARY_MODEL = "gpt-4o-mini";
 function isProbablyUrl(text) {
   const t = text.trim();
   return /^https?:\/\/\S+$/i.test(t);
+}
+
+function wordCount(text) {
+  return (text || "").trim().split(/\s+/).filter(Boolean).length;
 }
 
 function htmlToReadableText(html) {
@@ -72,35 +66,39 @@ async function waitForPuter(timeoutMs = 8000) {
   return null;
 }
 
-export default function AIWriterPuterStable() {
-  const [mode, setMode] = useState("linkedin");
+export default function AIChatWriter() {
+  const [mode, setMode] = useState("article");
   const [input, setInput] = useState("");
   const [experience, setExperience] = useState("");
   const [portfolioLinks, setPortfolioLinks] = useState("");
-
-  const [output, setOutput] = useState("");
+  
+  const [messages, setMessages] = useState([
+    {
+      id: 1,
+      role: "assistant",
+      content: "Hello! I can help you create content. Choose a mode below and tell me what you'd like to write about.",
+      timestamp: new Date(),
+    },
+  ]);
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
   const [puterReady, setPuterReady] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
   const [copied, setCopied] = useState(false);
-
-  const [editorContent, setEditorContent] = useState("");
-  const [previewMode, setPreviewMode] = useState("desktop");
-  const [history, setHistory] = useState([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  const editorRef = useRef(null);
+  
+  const chatContainerRef = useRef(null);
+  const inputRef = useRef(null);
 
   useEffect(() => {
-    if (output && editorRef.current) {
-      const htmlContent = output.replace(/\n/g, '<br>');
-      editorRef.current.innerHTML = htmlContent;
-      setEditorContent(htmlContent);
-      setHistory([htmlContent]);
-      setHistoryIndex(0);
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
-  }, [output]);
+  }, [messages]);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   const ensurePuter = async () => {
     setError("");
@@ -108,7 +106,7 @@ export default function AIWriterPuterStable() {
     if (!puter) {
       setPuterReady(false);
       throw new Error(
-        'Puter SDK not found. Make sure you added this in index.html:\n<script src="https://js.puter.com/v2/?v=2" defer></script>'
+        "Puter SDK not found. Make sure you added this in index.html:\n<script src=\"https://js.puter.com/v2/?v=2\" defer></script>"
       );
     }
     setPuterReady(true);
@@ -166,7 +164,39 @@ export default function AIWriterPuterStable() {
 
   const buildPrompts = (sourceText) => {
     const common =
-      "Write in simple, natural English that feels human. Avoid fluff and repetition. Output in clean format. Return ONLY the final result.";
+      "Write in simple, natural English that feels human. Avoid fluff and repetition. Output in clean Markdown. Return ONLY the final result.";
+
+    if (mode === "article") {
+      return {
+        system:
+          "You are a professional SEO editor and web article writer. You follow strict structure and word count. Keep it simple and human.",
+        user: `
+Topic / source:
+${sourceText}
+
+Requirements (STRICT):
+- Length: 800 to 1000 words (strict)
+- Structure:
+  1) Title
+  2) Hooking introduction (2-3 short paragraphs)
+  3) 3 to 5 headings with concise paragraphs
+  4) 3-6 bullet takeaways (practical)
+  5) Strong conclusion (2-4 lines)
+- Clarity: Simple English, easy to read
+- No filler. No unnecessary repetition.
+
+SEO:
+- Choose ONE primary keyword phrase and use it naturally in:
+  - Title
+  - first 120 words
+  - at least 2 headings
+- Add related keywords naturally (no stuffing).
+
+${common}
+`,
+        maxTokens: 1800,
+      };
+    }
 
     if (mode === "linkedin") {
       return {
@@ -188,6 +218,7 @@ ${common}
       };
     }
 
+    // upwork
     return {
       system: "You are an Upwork proposal writer. Write concise, specific proposals in simple English matching the client needs.",
       user: `
@@ -240,18 +271,23 @@ ${common}
     };
   };
 
-  const runAI = async () => {
-    setError("");
-    setOutput("");
-    setCopied(false);
-
+  const sendMessage = async () => {
     const trimmed = input.trim();
-    if (!trimmed) {
-      setError(mode === "upwork" ? "Please paste the client job description." : "Please enter a topic, a URL, or source text.");
-      return;
-    }
+    if (!trimmed || loading) return;
 
+    // Add user message
+    const userMessage = {
+      id: Date.now(),
+      role: "user",
+      content: trimmed,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+    setError("");
     setLoading(true);
+
     try {
       const puter = await ensurePuter();
 
@@ -278,497 +314,426 @@ ${common}
       let text = extractChatText(resp);
       if (!text) throw new Error("Empty response from AI. Please try again.");
 
-      setOutput(text);
+      if (mode === "article") {
+        const wc = wordCount(text);
+        if (wc < 800 || wc > 1000) {
+          const resp2 = await puter.ai.chat(
+            [
+              { role: "system", content: system },
+              {
+                role: "user",
+                content: `Rewrite the article to be STRICTLY 800–1000 words. Keep exact structure. Here is draft:\n\n${text}`,
+              },
+            ],
+            false,
+            { model: PRIMARY_MODEL, temperature: 0.4, max_tokens: 1900 }
+          );
+
+          const fixed = extractChatText(resp2);
+          if (fixed) text = fixed;
+        }
+      }
+
+      // Add assistant message
+      const assistantMessage = {
+        id: Date.now() + 1,
+        role: "assistant",
+        content: text,
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
     } catch (e) {
+      const errorMessage = {
+        id: Date.now() + 1,
+        role: "assistant",
+        content: `Error: ${stringifyError(e)}`,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
       setError(stringifyError(e));
     } finally {
       setLoading(false);
     }
   };
 
-  const onCtrlEnter = (e) => {
-    if (e.key === "Enter" && e.ctrlKey) {
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      runAI();
+      sendMessage();
     }
   };
 
-  const execCommand = (command, value = null) => {
-    if (!editorRef.current) return;
-    editorRef.current.focus();
-    document.execCommand(command, false, value);
-    setTimeout(() => {
-      updateHistory();
-    }, 100);
+  const clearChat = () => {
+    setMessages([
+      {
+        id: 1,
+        role: "assistant",
+        content: "Hello! I can help you create content. Choose a mode below and tell me what you'd like to write about.",
+        timestamp: new Date(),
+      },
+    ]);
   };
 
-  const updateHistory = () => {
-    if (!editorRef.current) return;
-    const content = editorRef.current.innerHTML;
-    const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push(content);
-    setHistory(newHistory);
-    setHistoryIndex(newHistory.length - 1);
-    setEditorContent(content);
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
-  const undo = () => {
-    if (historyIndex > 0) {
-      const newIndex = historyIndex - 1;
-      setHistoryIndex(newIndex);
-      if (editorRef.current) {
-        editorRef.current.innerHTML = history[newIndex];
-        setEditorContent(history[newIndex]);
-      }
-    }
-  };
-
-  const redo = () => {
-    if (historyIndex < history.length - 1) {
-      const newIndex = historyIndex + 1;
-      setHistoryIndex(newIndex);
-      if (editorRef.current) {
-        editorRef.current.innerHTML = history[newIndex];
-        setEditorContent(history[newIndex]);
-      }
-    }
-  };
-
-  const saveContent = async () => {
-    try {
-      const puter = await ensurePuter();
-      const content = editorRef.current?.innerHTML || editorContent;
-      await puter.kv.set(`ai-writer-${mode}-draft`, content);
-      alert("Content saved successfully!");
-    } catch (e) {
-      setError("Failed to save: " + stringifyError(e));
-    }
-  };
-
-  const loadContent = async () => {
-    try {
-      const puter = await ensurePuter();
-      const saved = await puter.kv.get(`ai-writer-${mode}-draft`);
-      if (saved && editorRef.current) {
-        editorRef.current.innerHTML = saved;
-        setEditorContent(saved);
-        updateHistory();
-        alert("Content loaded successfully!");
-      } else {
-        alert("No saved content found for this mode.");
-      }
-    } catch (e) {
-      setError("Failed to load: " + stringifyError(e));
-    }
-  };
-
-  const copyEditorContent = async () => {
-    try {
-      const text = editorRef.current?.innerText || editorContent.replace(/<[^>]*>/g, '');
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setError("Copy failed. Please manually select and copy.");
+  const getModeDescription = () => {
+    switch (mode) {
+      case "article":
+        return "Generate SEO-optimized articles (800-1000 words)";
+      case "linkedin":
+        return "Create engaging LinkedIn posts with practical advice";
+      case "upwork":
+        return "Write professional Upwork proposals";
+      default:
+        return "Select a content type";
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50 p-4 sm:p-6">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-4 md:p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-6">
-          <div className="flex items-center justify-center gap-3 mb-3">
-            <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl shadow-lg">
-              <Sparkles className="w-7 h-7 text-white" />
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-              AI Content Writer
-            </h1>
-          </div>
-          <p className="text-gray-600 text-lg">Create LinkedIn Posts & Upwork Proposals</p>
-          {mode !== "upwork" && (
-            <p className="text-xs text-gray-500 mt-2 flex items-center justify-center gap-2">
-              <LinkIcon className="w-4 h-4" />
-              Paste a public URL to auto-fetch content
-            </p>
-          )}
-        </div>
-
-        {/* Auth Status */}
-        <div className="bg-white rounded-2xl shadow-xl p-4 mb-6 border border-gray-100">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div className="text-sm text-gray-700">
-              <div className="flex items-center gap-2">
-                <span className={`inline-block w-2.5 h-2.5 rounded-full ${puterReady ? "bg-green-500" : "bg-gray-300"}`} />
-                <span>Puter SDK: {puterReady ? "Ready" : "Not loaded"}</span>
+        <div className="mb-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl shadow-lg">
+                <Sparkles className="w-6 h-6 text-white" />
               </div>
-              <div className="flex items-center gap-2 mt-1">
-                <span className={`inline-block w-2.5 h-2.5 rounded-full ${signedIn ? "bg-green-500" : "bg-gray-300"}`} />
-                <span>Auth: {signedIn ? "Signed in" : "Not signed in"}</span>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                  AI Content Writer
+                </h1>
+                <p className="text-gray-600 text-sm">Article • LinkedIn • Upwork</p>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={async () => {
-                  try {
-                    await signInWithPuter();
-                  } catch (e) {
-                    setError(stringifyError(e));
-                  }
-                }}
-                className="inline-flex items-center gap-2 text-sm bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-4 py-2 rounded-lg transition-colors font-medium shadow-sm"
-              >
-                <LogIn className="w-4 h-4" />
-                Sign In
-              </button>
-              <button
-                onClick={async () => {
-                  try {
-                    await signOutFromPuter();
-                  } catch (e) {
-                    setError(stringifyError(e));
-                  }
-                }}
-                className="inline-flex items-center gap-2 text-sm bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg transition-colors font-medium border"
-              >
-                <LogOut className="w-4 h-4" />
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
 
-        {/* Mode Selection */}
-        <div className="bg-white rounded-2xl shadow-xl p-4 mb-6 border border-gray-100">
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setMode("linkedin")}
-              className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                mode === "linkedin" 
-                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md" 
-                  : "bg-gray-50 hover:bg-gray-100 text-gray-700"
-              }`}
-            >
-              💼 LinkedIn Post
-            </button>
-            <button
-              onClick={() => setMode("upwork")}
-              className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                mode === "upwork" 
-                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md" 
-                  : "bg-gray-50 hover:bg-gray-100 text-gray-700"
-              }`}
-            >
-              💰 Upwork Proposal
-            </button>
-          </div>
-        </div>
-
-        {/* Input Section */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border border-gray-100">
-          <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-purple-600" />
-            {mode === "upwork" ? "Client Job Description" : "Topic / URL / Source Text"}
-          </label>
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={onCtrlEnter}
-            placeholder={
-              mode === "upwork" 
-                ? "Paste the complete client job description here..." 
-                : "Enter a topic, paste a URL, or provide source text..."
-            }
-            className="w-full h-40 p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-all text-gray-700"
-          />
-
-          {/* Upwork Optional Fields */}
-          {mode === "upwork" && (
-            <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
-                  <Briefcase className="w-4 h-4 text-purple-600" />
-                  Your Experience (Optional)
-                </label>
-                <textarea
-                  value={experience}
-                  onChange={(e) => setExperience(e.target.value)}
-                  placeholder="Example: I build WordPress sites, create custom plugins, design UI/UX..."
-                  className="w-full h-24 p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-all text-gray-700 text-sm"
-                />
+            {/* Auth Status */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg shadow-sm border">
+                <div className={`w-2 h-2 rounded-full ${puterReady ? "bg-green-500" : "bg-gray-300"}`} />
+                <span className="text-sm">{puterReady ? "Ready" : "Loading SDK"}</span>
               </div>
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
-                  <LinkIcon className="w-4 h-4 text-purple-600" />
-                  Portfolio Links (Optional)
-                </label>
-                <textarea
-                  value={portfolioLinks}
-                  onChange={(e) => setPortfolioLinks(e.target.value)}
-                  placeholder="Paste portfolio links (one per line)"
-                  className="w-full h-24 p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-all text-gray-700 text-sm"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Error Display */}
-          {error && (
-            <div className="mt-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                <div className="text-sm text-red-700 whitespace-pre-wrap">{error}</div>
-              </div>
-            </div>
-          )}
-
-          {/* Generate Button */}
-          <button
-            onClick={runAI}
-            disabled={loading}
-            className="mt-4 w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-400 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-[1.02] disabled:scale-100 flex items-center justify-center gap-3 shadow-lg disabled:shadow-none"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Generating with AI...
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-5 h-5" />
-                Generate with AI
-              </>
-            )}
-          </button>
-        </div>
-
-        {/* Editor and Preview Section */}
-        {output && (
-          <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
-            {/* Toolbar */}
-            <div className="flex flex-wrap items-center gap-2 mb-4 pb-4 border-b border-gray-200">
-              <button
-                onClick={() => execCommand("bold")}
-                className="p-2 hover:bg-purple-100 rounded-lg transition"
-                title="Bold (Ctrl+B)"
-              >
-                <Bold className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => execCommand("italic")}
-                className="p-2 hover:bg-purple-100 rounded-lg transition"
-                title="Italic (Ctrl+I)"
-              >
-                <Italic className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => execCommand("underline")}
-                className="p-2 hover:bg-purple-100 rounded-lg transition"
-                title="Underline (Ctrl+U)"
-              >
-                <Underline className="w-4 h-4" />
-              </button>
               
-              <div className="w-px h-6 bg-gray-300 mx-1" />
-              
-              <button
-                onClick={() => execCommand("insertUnorderedList")}
-                className="p-2 hover:bg-purple-100 rounded-lg transition"
-                title="Bullet List"
-              >
-                <List className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => execCommand("insertOrderedList")}
-                className="p-2 hover:bg-purple-100 rounded-lg transition"
-                title="Numbered List"
-              >
-                <ListOrdered className="w-4 h-4" />
-              </button>
-              
-              <div className="w-px h-6 bg-gray-300 mx-1" />
-              
-              <button
-                onClick={() => execCommand("justifyLeft")}
-                className="p-2 hover:bg-purple-100 rounded-lg transition"
-                title="Align Left"
-              >
-                <AlignLeft className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => execCommand("justifyCenter")}
-                className="p-2 hover:bg-purple-100 rounded-lg transition"
-                title="Align Center"
-              >
-                <AlignCenter className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => execCommand("justifyRight")}
-                className="p-2 hover:bg-purple-100 rounded-lg transition"
-                title="Align Right"
-              >
-                <AlignRight className="w-4 h-4" />
-              </button>
-              
-              <div className="w-px h-6 bg-gray-300 mx-1" />
-              
-              <button
-                onClick={undo}
-                disabled={historyIndex <= 0}
-                className="p-2 hover:bg-purple-100 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed"
-                title="Undo"
-              >
-                <Undo className="w-4 h-4" />
-              </button>
-              <button
-                onClick={redo}
-                disabled={historyIndex >= history.length - 1}
-                className="p-2 hover:bg-purple-100 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed"
-                title="Redo"
-              >
-                <Redo className="w-4 h-4" />
-              </button>
-              
-              <div className="flex-1" />
-              
-              <button
-                onClick={saveContent}
-                className="inline-flex items-center gap-2 px-3 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg transition text-sm font-medium"
-              >
-                <Save className="w-4 h-4" />
-                Save
-              </button>
-              <button
-                onClick={loadContent}
-                className="inline-flex items-center gap-2 px-3 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg transition text-sm font-medium"
-              >
-                <FolderOpen className="w-4 h-4" />
-                Load
-              </button>
-            </div>
-
-            {/* Editor */}
-            <div className="mb-6">
-              <label className="text-sm font-semibold text-gray-700 mb-2 block">
-                ✏️ Write Your Post
-              </label>
-              <div
-                ref={editorRef}
-                contentEditable
-                suppressContentEditableWarning
-                onInput={updateHistory}
-                className="w-full min-h-[250px] p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none text-gray-700 leading-relaxed bg-white text-left"
-                style={{ textAlign: 'left' }}
-              />
-            </div>
-
-            {/* Copy Button */}
-            <button
-              onClick={copyEditorContent}
-              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg mb-6"
-            >
-              {copied ? (
-                <>
-                  <Check className="w-5 h-5" /> Copied to Clipboard!
-                </>
+              {!signedIn ? (
+                <button
+                  onClick={signInWithPuter}
+                  className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <LogIn className="w-4 h-4" />
+                  Sign In
+                </button>
               ) : (
-                <>
-                  <Copy className="w-5 h-5" /> Copy to Clipboard
-                </>
+                <button
+                  onClick={signOutFromPuter}
+                  className="flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium border transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign Out
+                </button>
               )}
-            </button>
+            </div>
+          </div>
 
-            {/* Preview Section */}
-            <div className="border-t-2 border-gray-200 pt-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                  👁️ Post Preview
-                </h3>
-                <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
-                  <button
-                    onClick={() => setPreviewMode("desktop")}
-                    className={`p-2 rounded-md transition ${
-                      previewMode === "desktop" 
-                        ? "bg-white text-purple-700 shadow-sm" 
-                        : "text-gray-500 hover:text-gray-700"
-                    }`}
-                    title="Desktop View"
-                  >
-                    <Monitor className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setPreviewMode("mobile")}
-                    className={`p-2 rounded-md transition ${
-                      previewMode === "mobile" 
-                        ? "bg-white text-purple-700 shadow-sm" 
-                        : "text-gray-500 hover:text-gray-700"
-                    }`}
-                    title="Mobile View"
-                  >
-                    <Smartphone className="w-4 h-4" />
-                  </button>
+          {/* Mode Selector */}
+          <div className="bg-white rounded-xl shadow-lg p-4 mb-4 border border-gray-200">
+            <div className="flex flex-wrap gap-2 mb-3">
+              {["article", "linkedin", "upwork"].map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setMode(m)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    mode === m
+                      ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md"
+                      : "bg-gray-50 hover:bg-gray-100 text-gray-700"
+                  }`}
+                >
+                  {m === "article" && "Article"}
+                  {m === "linkedin" && "LinkedIn Post"}
+                  {m === "upwork" && "Upwork Proposal"}
+                </button>
+              ))}
+            </div>
+            <p className="text-sm text-gray-600">{getModeDescription()}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Chat Container */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 h-[calc(100vh-250px)] flex flex-col">
+              {/* Chat Header */}
+              <div className="border-b border-gray-200 p-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-purple-100 rounded-lg">
+                    <Bot className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <h2 className="font-semibold text-gray-800">AI Content Assistant</h2>
+                    <p className="text-xs text-gray-500">Using {PRIMARY_MODEL}</p>
+                  </div>
                 </div>
+                <button
+                  onClick={clearChat}
+                  className="flex items-center gap-2 text-sm text-gray-600 hover:text-red-600 px-3 py-1.5 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Clear Chat
+                </button>
               </div>
 
-              {/* LinkedIn-style Preview */}
-              <div className={`bg-gray-100 rounded-xl p-6 transition-all ${previewMode === "mobile" ? "max-w-sm mx-auto" : ""}`}>
-                <div className="bg-white rounded-xl shadow-lg p-6">
-                  {/* Profile Header */}
-                  <div className="flex items-start gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-indigo-500 flex items-center justify-center text-white font-bold text-xl shadow-md">
-                      U
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-gray-900">Your Name</h4>
-                      <p className="text-sm text-gray-600">Your Professional Title | Company</p>
-                      <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                        12h • <span className="inline-block">🌐</span>
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Post Content */}
+              {/* Messages Container */}
+              <div
+                ref={chatContainerRef}
+                className="flex-1 overflow-y-auto p-4 space-y-6"
+              >
+                {messages.map((msg) => (
                   <div
-                    className="prose prose-sm max-w-none text-gray-800 leading-relaxed mb-4 text-left"
-                    style={{ textAlign: 'left' }}
-                    dangerouslySetInnerHTML={{ __html: editorRef.current?.innerHTML || editorContent }}
-                  />
-
-                  {/* Engagement Stats */}
-                  <div className="flex items-center justify-between text-xs text-gray-500 pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-1">
-                      <span className="text-blue-600">👍</span>
-                      <span>64</span>
+                    key={msg.id}
+                    className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
+                  >
+                    <div
+                      className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                        msg.role === "user"
+                          ? "bg-gradient-to-br from-blue-500 to-cyan-400"
+                          : "bg-gradient-to-br from-purple-500 to-indigo-500"
+                      }`}
+                    >
+                      {msg.role === "user" ? (
+                        <User className="w-4 h-4 text-white" />
+                      ) : (
+                        <Bot className="w-4 h-4 text-white" />
+                      )}
                     </div>
-                    <span>27 comments • 4 reposts</span>
+
+                    <div
+                      className={`max-w-[80%] rounded-2xl p-4 ${
+                        msg.role === "user"
+                          ? "bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-100"
+                          : "bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200"
+                      }`}
+                    >
+                      <div className="text-sm text-gray-500 mb-1">
+                        {msg.role === "user" ? "You" : "AI Assistant"}
+                      </div>
+                      <div className="text-gray-800 whitespace-pre-wrap">
+                        {msg.content}
+                      </div>
+                      {msg.role === "assistant" && !msg.content.startsWith("Error:") && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <button
+                            onClick={() => copyToClipboard(msg.content)}
+                            className="flex items-center gap-2 text-sm text-purple-600 hover:text-purple-700 px-3 py-1.5 hover:bg-purple-50 rounded-lg transition-colors"
+                          >
+                            {copied ? (
+                              <>
+                                <Check className="w-4 h-4" />
+                                Copied!
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-4 h-4" />
+                                Copy Content
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {loading && (
+                  <div className="flex gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-purple-500 to-indigo-500">
+                      <Bot className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-2xl p-4">
+                      <div className="text-sm text-gray-500 mb-2">AI Assistant</div>
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Generating {mode === "article" ? "article" : mode === "linkedin" ? "LinkedIn post" : "Upwork proposal"}...
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Input Area */}
+              <div className="border-t border-gray-200 p-4">
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <textarea
+                      ref={inputRef}
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder={
+                        mode === "article"
+                          ? "Enter topic or paste URL for article..."
+                          : mode === "linkedin"
+                          ? "Enter idea or paste URL for LinkedIn post..."
+                          : "Paste client job description for Upwork proposal..."
+                      }
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                      rows="3"
+                    />
+                  </div>
+                  <button
+                    onClick={sendMessage}
+                    disabled={loading || !input.trim()}
+                    className="self-end bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-400 text-white p-3 rounded-lg transition-colors disabled:cursor-not-allowed"
+                  >
+                    {loading ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Send className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
+                <div className="mt-2 flex justify-between">
+                  <p className="text-xs text-gray-500">
+                    Press Enter to send, Shift+Enter for new line
+                  </p>
+                  {mode === "article" && (
+                    <p className="text-xs text-gray-500">
+                      Word count: <span className="font-medium">{wordCount(input)}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Upwork Optional Fields */}
+            {mode === "upwork" && (
+              <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-5">
+                <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <Briefcase className="w-5 h-5 text-purple-600" />
+                  Upwork Settings
+                </h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Your Experience (Optional)
+                    </label>
+                    <textarea
+                      value={experience}
+                      onChange={(e) => setExperience(e.target.value)}
+                      placeholder="e.g., I've built 50+ WordPress sites with custom plugins..."
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                      rows="4"
+                    />
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="grid grid-cols-4 gap-2 pt-3">
-                    <button className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-gray-600 hover:bg-gray-50 py-2 rounded-lg transition text-xs sm:text-sm">
-                      <span className="text-lg sm:text-base">💬</span>
-                      <span>Comment</span>
-                    </button>
-                    <button className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-gray-600 hover:bg-gray-50 py-2 rounded-lg transition text-xs sm:text-sm">
-                      <span className="text-lg sm:text-base">🔁</span>
-                      <span>Share</span>
-                    </button>
-                    <button className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-gray-600 hover:bg-gray-50 py-2 rounded-lg transition text-xs sm:text-sm">
-                      <span className="text-lg sm:text-base">📤</span>
-                      <span>Send</span>
-                    </button>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                      <LinkIcon className="w-4 h-4" />
+                      Portfolio Links (Optional)
+                    </label>
+                    <textarea
+                      value={portfolioLinks}
+                      onChange={(e) => setPortfolioLinks(e.target.value)}
+                      placeholder="Paste your portfolio links (one per line)"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                      rows="4"
+                    />
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* Instructions */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-5">
+              <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-purple-600" />
+                How to Use
+              </h3>
+              
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center">
+                    <span className="text-sm font-medium text-purple-600">1</span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Choose a content type from the tabs above
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center">
+                    <span className="text-sm font-medium text-purple-600">2</span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Type your prompt or paste a URL (articles & LinkedIn)
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center">
+                    <span className="text-sm font-medium text-purple-600">3</span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    For Upwork, paste job description and add optional details
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center">
+                    <span className="text-sm font-medium text-purple-600">4</span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Click send or press Enter to generate content
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Features */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-5">
+              <h3 className="font-semibold text-gray-800 mb-4">Features</h3>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  SEO-optimized articles (800-1000 words)
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  Engaging LinkedIn posts with hashtags
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  Professional Upwork proposals
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  URL fetching for articles & posts
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  One-click copy to clipboard
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {error && (
+          <div className="mt-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+              <div className="text-sm text-red-700">{error}</div>
             </div>
           </div>
         )}
       </div>
     </div>
   );
-}-600 hover:bg-gray-50 py-2 rounded-lg transition text-xs sm:text-sm">
-                      <span className="text-lg sm:text-base">👍</span>
-                      <span>Like</span>
-                    </button>
-                    <button className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-gray
+}
