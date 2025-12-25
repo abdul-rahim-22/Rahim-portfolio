@@ -11,6 +11,8 @@ import {
   Code,
   Terminal,
   Bug,
+  Key,
+  Shield,
 } from "lucide-react";
 
 const PRIMARY_MODEL = "allenai/olmo-31b-instruct-think";
@@ -55,31 +57,48 @@ function stringifyError(err) {
   }
 }
 
-// OpenRouter API helper function
+// OpenRouter API helper function with improved error handling
 async function callOpenRouterAPI(messages, model, temperature, maxTokens) {
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-      "HTTP-Referer": window.location.hostname || "localhost",
-      "X-Title": "AI Writer Puter Stable"
-    },
-    body: JSON.stringify({
-      model: model,
-      messages: messages,
-      temperature: temperature,
-      max_tokens: maxTokens,
-      stream: false
-    })
-  });
+  try {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+        "HTTP-Referer": window.location.hostname || "localhost",
+        "X-Title": "AI Writer Puter Stable",
+        "User-Agent": "AI-Writer/1.0"
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: messages,
+        temperature: temperature,
+        max_tokens: maxTokens,
+        stream: false
+      })
+    });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`OpenRouter API error: ${response.status} - ${errorText}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorMessage = `HTTP ${response.status}`;
+      
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.error?.message || errorText;
+      } catch {
+        errorMessage = errorText;
+      }
+      
+      throw new Error(`OpenRouter API error: ${errorMessage}`);
+    }
+
+    return await response.json();
+  } catch (networkError) {
+    if (networkError.name === 'TypeError' && networkError.message.includes('fetch')) {
+      throw new Error("Network error: Please check your internet connection and try again.");
+    }
+    throw networkError;
   }
-
-  return await response.json();
 }
 
 // Debug helper: find coding errors
@@ -101,12 +120,7 @@ function findCodingErrors(text) {
     { pattern: /<a[^>]*href\s*=\s*["'][^"']*["'][^>]*>/gi, description: "External links without target='_blank'", severity: "info" },
     { pattern: /<input[^>]*type\s*=\s*["']submit["'][^>]*>/gi, description: "Submit buttons should have form attribute", severity: "info" },
     { pattern: /<form[^>]*>[^<]*(?!<\/form>)/gi, description: "Form without closing tag", severity: "error" },
-    { pattern: /class\s*=\s*["'][^"']*["'][^>]*>/gi, description: "Missing class attribute", severity: "info" },
-    { pattern: /id\s*=\s*["'][^"']*["'][^>]*>/gi, description: "Missing id attribute", severity: "info" },
-    { pattern: /alt\s*=\s*["'][^"']*["'][^>]*>/gi, description: "Missing alt attribute for images", severity: "error" },
     { pattern: /<img[^>]*(?!alt\s*=\s*["'])/gi, description: "Image without alt attribute", severity: "error" },
-    { pattern: /<video[^>]*(?!controls)/gi, description: "Video without controls", severity: "info" },
-    { pattern: /<audio[^>]*(?!controls)/gi, description: "Audio without controls", severity: "info" },
     { pattern: /<label[^>]*>[^<]*(?!<\/label>)/gi, description: "Label without closing tag", severity: "error" },
     { pattern: /<button[^>]*>[^<]*(?!<\/button>)/gi, description: "Button without closing tag", severity: "error" },
     { pattern: /<div[^>]*>[^<]*(?!<\/div>)/gi, description: "Div without closing tag", severity: "error" },
@@ -120,7 +134,6 @@ function findCodingErrors(text) {
     { pattern: /<tr[^>]*>[^<]*(?!<\/tr>)/gi, description: "Table row without closing tag", severity: "error" },
     { pattern: /<td[^>]*>[^<]*(?!<\/td>)/gi, description: "Table cell without closing tag", severity: "error" },
     { pattern: /<th[^>]*>[^<]*(?!<\/th>)/gi, description: "Table header without closing tag", severity: "error" },
-    { pattern: /<form[^>]*>[^<]*(?!<\/form>)/gi, description: "Form without closing tag", severity: "error" },
     { pattern: /<input[^>]*type\s*=\s*["']text["'][^>]*>/gi, description: "Input without label", severity: "warning" },
     { pattern: /<input[^>]*type\s*=\s*["']email["'][^>]*>/gi, description: "Email input without validation", severity: "warning" },
     { pattern: /<input[^>]*type\s*=\s*["']password["'][^>]*>/gi, description: "Password input without validation", severity: "warning" },
@@ -129,11 +142,6 @@ function findCodingErrors(text) {
     { pattern: /<input[^>]*type\s*=\s*["']file["'][^>]*>/gi, description: "File input without accept attribute", severity: "warning" },
     { pattern: /<a[^>]*href\s*=\s*["']#["'][^>]*>/gi, description: "Link with hash href", severity: "warning" },
     { pattern: /<a[^>]*href\s*=\s*["'][^"']*\.[a-z]{2,}["'][^>]*>/gi, description: "External link without rel='noopener'", severity: "warning" },
-    { pattern: /<meta[^>]*>/gi, description: "Missing meta tags", severity: "info" },
-    { pattern: /<title[^>]*>/gi, description: "Missing page title", severity: "info" },
-    { pattern: /<body[^>]*>/gi, description: "Missing body tag", severity: "info" },
-    { pattern: /<head[^>]*>/gi, description: "Missing head tag", severity: "info" },
-    { pattern: /<html[^>]*>/gi, description: "Missing html tag", severity: "info" },
   ];
 
   lines.forEach((line, index) => {
@@ -166,6 +174,7 @@ export default function AIWriterPuterStable() {
 
   const [copied, setCopied] = useState(false);
   const [debugResult, setDebugResult] = useState([]);
+  const [apiKeyStatus, setApiKeyStatus] = useState("unknown"); // unknown, valid, invalid
 
   const modelUsed = useMemo(() => PRIMARY_MODEL, []);
 
@@ -282,6 +291,29 @@ ${common}
     return { system: "", user: "", maxTokens: 1 };
   };
 
+  const checkApiKey = async () => {
+    try {
+      const response = await fetch("https://openrouter.ai/api/v1/auth", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+          "User-Agent": "AI-Writer/1.0"
+        }
+      });
+
+      if (response.ok) {
+        setApiKeyStatus("valid");
+        return true;
+      } else {
+        setApiKeyStatus("invalid");
+        return false;
+      }
+    } catch (error) {
+      setApiKeyStatus("invalid");
+      return false;
+    }
+  };
+
   const runAI = async () => {
     setError("");
     setOutput("");
@@ -295,6 +327,14 @@ ${common}
 
     setLoading(true);
     try {
+      // Check API key validity
+      if (apiKeyStatus === "unknown") {
+        const isValid = await checkApiKey();
+        if (!isValid) {
+          throw new Error("API key is invalid or expired. Please check your OpenRouter API key.");
+        }
+      }
+
       const { sourceText } = await maybeFetchUrlText(trimmed);
       const { system, user, maxTokens } = buildPrompts(sourceText);
 
@@ -407,6 +447,29 @@ ${common}
           )}
         </div>
 
+        {/* API Key Status */}
+        <div className="bg-white rounded-2xl shadow-xl p-4 mb-6 border border-gray-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Key className="w-5 h-5 text-purple-600" />
+              <span className="text-sm font-semibold text-gray-700">OpenRouter API:</span>
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                apiKeyStatus === "valid" 
+                  ? "bg-green-100 text-green-800 border border-green-200" 
+                  : apiKeyStatus === "invalid"
+                  ? "bg-red-100 text-red-800 border border-red-200"
+                  : "bg-gray-100 text-gray-800 border border-gray-200"
+              }`}>
+                {apiKeyStatus === "valid" ? "Active" : apiKeyStatus === "invalid" ? "Invalid" : "Checking..."}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Shield className="w-4 h-4" />
+              <span>Model: {modelUsed}</span>
+            </div>
+          </div>
+        </div>
+
         {/* Mode tabs */}
         <div className="bg-white rounded-2xl shadow-xl p-4 mb-6 border border-gray-100">
           <div className="flex flex-wrap gap-2">
@@ -516,7 +579,7 @@ ${common}
 
           <button
             onClick={runAI}
-            disabled={loading}
+            disabled={loading || apiKeyStatus === "invalid"}
             className="mt-4 w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-400 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-[1.02] disabled:scale-100 flex items-center justify-center gap-3 shadow-lg disabled:shadow-none"
           >
             {loading ? (
