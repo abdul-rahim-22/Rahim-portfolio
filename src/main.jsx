@@ -14,8 +14,7 @@ import SplashCursor from './component/cursor.jsx'
 import Footer from './component/footer.jsx'
 import Processs from './component/porcess.jsx'
 import AIArticleWriter from './component/AIArticleWriter.jsx';
-import SkillIncomeMatcher from ".component/SkillIncomeMatcher.jsx";
-
+import SkillIncomeMatcher from "./component/SkillIncomeMatcher.jsx";
 
 
 
@@ -32,8 +31,8 @@ createRoot(document.getElementById('root')).render(
   <Portfolio2/>
   <Portfolio/>
   <Processs/>
-{/* <AIArticleWriter/>  */}
-    <SkillIncomeMatcher />
+<AIArticleWriter/>
+  <SkillIncomeMatcher/>
   <Footer/>
   </>
  
