@@ -1,112 +1,148 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
-const API =
-  "https://corsproxy.io/?https://remoteok.com/api";
+const API = "https://corsproxy.io/?https://remoteok.com/api";
 
-export default function SkillDemandChecker() {
-  const [skill, setSkill] = useState("");
-  const [result, setResult] = useState(null);
+export default function AdvancedSkillDemand() {
+  const [skills, setSkills] = useState("");
   const [jobs, setJobs] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // load saved data
+  // Load saved
   useEffect(() => {
-    const saved = localStorage.getItem("skillDemandReal");
+    const saved = localStorage.getItem("advancedSkillDemand");
     if (saved) {
       const parsed = JSON.parse(saved);
-      setResult(parsed.result);
       setJobs(parsed.jobs);
+      setStats(parsed.stats);
     }
   }, []);
 
-  // save data
+  // Save
   useEffect(() => {
-    if (result) {
+    if (stats) {
       localStorage.setItem(
-        "skillDemandReal",
-        JSON.stringify({ result, jobs })
+        "advancedSkillDemand",
+        JSON.stringify({ jobs, stats })
       );
     }
-  }, [result, jobs]);
+  }, [jobs, stats]);
 
-  const checkDemand = async () => {
-    if (!skill) return alert("Enter any skill");
+  const analyze = async () => {
+    if (!skills) return alert("Enter skills");
 
     setLoading(true);
-
     try {
       const res = await fetch(API);
       const data = await res.json();
-
-      // remove first metadata object
       const jobList = data.slice(1);
 
+      const skillArray = skills
+        .split(",")
+        .map((s) => s.trim().toLowerCase());
+
       const matched = jobList.filter((job) => {
-        const text =
-          `${job.position} ${job.description} ${job.tags?.join(" ")}`.toLowerCase();
-        return text.includes(skill.toLowerCase());
+        const text = `${job.position} ${job.description} ${job.tags?.join(" ")}`.toLowerCase();
+        return skillArray.some((s) => text.includes(s));
       });
 
-      // sort by date (latest first)
-      matched.sort(
-        (a, b) => (b.date || 0) - (a.date || 0)
-      );
+      matched.sort((a, b) => (b.date || 0) - (a.date || 0));
 
-      const output = {
-        skill,
+      const demandLevel =
+        matched.length > 80
+          ? "Very High"
+          : matched.length > 40
+          ? "High"
+          : matched.length > 15
+          ? "Medium"
+          : "Low";
+
+      setStats({
+        skills: skillArray,
         totalJobs: matched.length,
-        demand:
-          matched.length > 60
-            ? "🔥 Very High"
-            : matched.length > 25
-            ? "⚡ Medium"
-            : "❄️ Low",
+        demand: demandLevel,
         checkedAt: new Date().toLocaleString(),
-      };
+      });
 
-      setResult(output);
-      setJobs(matched.slice(0, 7)); // latest 7 jobs
-    } catch (e) {
-      alert("Failed to fetch jobs");
+      setJobs(matched.slice(0, 10));
+    } catch {
+      alert("API error");
     }
-
     setLoading(false);
   };
 
+  const clearAll = () => {
+    localStorage.removeItem("advancedSkillDemand");
+    setJobs([]);
+    setStats(null);
+    setSkills("");
+  };
+
   return (
-    <div style={styles.container}>
-      <h2>🌍 Real Skill Demand Checker</h2>
+    <div style={styles.wrapper}>
+      <h1 style={styles.title}>Skill Demand Analyzer</h1>
+      <p style={styles.subtitle}>
+        Check real global remote job demand for any skill using live market data.
+      </p>
 
-      <input
-        style={styles.input}
-        placeholder="Enter ANY skill (React, Excel, AI, QA...)"
-        value={skill}
-        onChange={(e) => setSkill(e.target.value)}
-      />
+      <div style={styles.inputGroup}>
+        <label style={styles.label}>Enter Skills</label>
+        <input
+          value={skills}
+          onChange={(e) => setSkills(e.target.value)}
+          placeholder="e.g. React, Python, Excel"
+          style={styles.input}
+        />
+        <small style={styles.hint}>
+          Separate multiple skills with commas
+        </small>
+      </div>
 
-      <button onClick={checkDemand} style={styles.button}>
-        {loading ? "Checking..." : "Check Real Jobs"}
-      </button>
+      <div style={styles.actions}>
+        <button onClick={analyze} style={styles.primaryBtn}>
+          {loading ? "Analyzing..." : "Analyze Market"}
+        </button>
+        <button onClick={clearAll} style={styles.secondaryBtn}>
+          Clear
+        </button>
+      </div>
 
-      {result && (
+      {stats && (
         <div style={styles.card}>
-          <p><b>Skill:</b> {result.skill}</p>
-          <p><b>Total Remote Jobs:</b> {result.totalJobs}</p>
-          <p><b>Demand Level:</b> {result.demand}</p>
-          <p><b>Last Checked:</b> {result.checkedAt}</p>
+          <h3 style={styles.cardTitle}>Market Summary</h3>
+          <p><b>Skills:</b> {stats.skills.join(", ")}</p>
+          <p><b>Total Jobs:</b> {stats.totalJobs}</p>
+          <p><b>Demand Level:</b> {stats.demand}</p>
+          <p><b>Last Updated:</b> {stats.checkedAt}</p>
+
+          <div style={styles.bar}>
+            <div
+              style={{
+                ...styles.barFill,
+                width:
+                  stats.totalJobs > 80
+                    ? "100%"
+                    : stats.totalJobs > 40
+                    ? "70%"
+                    : stats.totalJobs > 15
+                    ? "40%"
+                    : "20%",
+              }}
+            />
+          </div>
         </div>
       )}
 
       {jobs.length > 0 && (
-        <div>
-          <h3>🆕 Latest Jobs</h3>
+        <div style={styles.card}>
+          <h3 style={styles.cardTitle}>Latest Job Openings</h3>
           {jobs.map((job) => (
             <div key={job.id} style={styles.job}>
               <a href={job.url} target="_blank" rel="noreferrer">
                 <b>{job.position}</b>
               </a>
               <p>{job.company}</p>
-              <small>Tags: {job.tags?.join(", ")}</small>
+              <small>{job.tags?.join(", ")}</small>
             </div>
           ))}
         </div>
@@ -116,35 +152,63 @@ export default function SkillDemandChecker() {
 }
 
 const styles = {
-  container: {
-    maxWidth: "520px",
+  wrapper: {
+    maxWidth: "700px",
     margin: "40px auto",
-    padding: "20px",
-    background: "#f5f5f5",
-    fontFamily: "sans-serif",
-    borderRadius: "10px",
+    padding: "30px",
+    fontFamily: "Inter, sans-serif",
+    background: "#f8f9fb",
+    color: "#111",
+    textAlign: "left",
+    borderRadius: "12px",
   },
+  title: { marginBottom: "5px" },
+  subtitle: { marginBottom: "25px", color: "#555" },
+  inputGroup: { marginBottom: "20px" },
+  label: { fontWeight: "600", display: "block", marginBottom: "6px" },
   input: {
     width: "100%",
-    padding: "10px",
-    marginBottom: "10px",
+    padding: "12px",
+    fontSize: "15px",
+    borderRadius: "8px",
+    border: "1px solid #ccc",
   },
-  button: {
-    width: "100%",
-    padding: "10px",
+  hint: { color: "#777" },
+  actions: { display: "flex", gap: "10px", marginBottom: "25px" },
+  primaryBtn: {
+    padding: "12px 20px",
     background: "#000",
     color: "#fff",
+    border: "none",
+    borderRadius: "8px",
     cursor: "pointer",
+  },
+  secondaryBtn: {
+    padding: "12px 20px",
+    background: "#ddd",
+    border: "none",
+    borderRadius: "8px",
   },
   card: {
     background: "#fff",
-    padding: "15px",
-    marginTop: "15px",
+    padding: "20px",
+    borderRadius: "10px",
+    marginBottom: "25px",
   },
+  cardTitle: { marginBottom: "10px" },
   job: {
-    background: "#fff",
-    padding: "10px",
+    padding: "10px 0",
+    borderBottom: "1px solid #eee",
+  },
+  bar: {
+    height: "8px",
+    background: "#eee",
+    borderRadius: "10px",
     marginTop: "10px",
-    borderRadius: "6px",
+  },
+  barFill: {
+    height: "100%",
+    background: "#000",
+    borderRadius: "10px",
   },
 };
