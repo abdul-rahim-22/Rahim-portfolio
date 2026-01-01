@@ -2,133 +2,152 @@ import React, { useState } from "react";
 
 const REMOTEOK = "https://corsproxy.io/?https://remoteok.com/api";
 
+/* ---------- CATEGORY MAP ---------- */
+const CATEGORY_MAP = {
+  marketing: ["SEO", "Content Marketing"],
+  frontend: ["Angular", "Vue"],
+  backend: ["Node.js", "Java"],
+  programming: ["Java", "C++"],
+  data: ["Data Analyst", "Machine Learning"],
+};
+
+/* ---------- DETECT CATEGORY ---------- */
+function detectCategory(skill) {
+  const s = skill.toLowerCase();
+  if (s.includes("social") || s.includes("marketing")) return "marketing";
+  if (s.includes("react") || s.includes("frontend")) return "frontend";
+  if (s.includes("node") || s.includes("backend")) return "backend";
+  if (s.includes("python") || s.includes("data")) return "data";
+  return "programming";
+}
+
+/* ---------- ANALYZE SKILL ---------- */
 async function analyzeSkill(skill) {
-  /* -------- Remote Jobs -------- */
+  /* Jobs */
   const jobRes = await fetch(REMOTEOK);
   const jobData = await jobRes.json();
   const jobList = jobData.slice(1);
 
-  const matchedJobs = jobList.filter((job) => {
-    const text =
-      `${job.position} ${job.description} ${job.tags?.join(" ")}`.toLowerCase();
-    return text.includes(skill.toLowerCase());
-  });
+  const matchedJobs = jobList.filter((job) =>
+    `${job.position} ${job.description} ${job.tags?.join(" ")}`
+      .toLowerCase()
+      .includes(skill.toLowerCase())
+  );
 
-  /* -------- GitHub -------- */
+  /* GitHub */
   const gitRes = await fetch(
-    `https://api.github.com/search/repositories?q=${skill}&sort=stars&order=desc`
+    `https://api.github.com/search/repositories?q=${skill}&sort=stars`
   );
   const gitData = await gitRes.json();
+  const topRepos = (gitData.items || []).slice(0, 3).map((r) => ({
+    name: r.full_name,
+    url: r.html_url,
+    stars: r.stargazers_count,
+  }));
 
-  /* -------- Reddit (CORS SAFE) -------- */
-  let redditPosts = 0;
+  /* Reddit */
+  let redditPosts = [];
   try {
     const redRes = await fetch(
-      `https://corsproxy.io/?https://www.reddit.com/search.json?q=${skill}+jobs&limit=20`
+      `https://corsproxy.io/?https://www.reddit.com/search.json?q=${skill}+jobs&limit=5`
     );
     const redData = await redRes.json();
-    redditPosts = redData.data.children.length;
+    redditPosts = redData.data.children.map((p) => ({
+      title: p.data.title,
+      url: "https://reddit.com" + p.data.permalink,
+    }));
   } catch {}
 
-  /* -------- Score -------- */
-  const jobScore = Math.min(matchedJobs.length, 50);
-  const gitScore = Math.min(gitData.total_count / 1000, 30);
-  const redditScore = redditPosts * 2;
-
+  /* Score */
   const score = Math.min(
-    Math.round(jobScore + gitScore + redditScore),
+    Math.round(
+      Math.min(matchedJobs.length, 50) +
+        Math.min(gitData.total_count / 1000, 30) +
+        redditPosts.length * 4
+    ),
     100
   );
 
-  let verdict = "🔴 Low Demand";
-  if (score >= 75) verdict = "🟢 Strong Career Skill";
-  else if (score >= 45) verdict = "🟡 Growing but Competitive";
-
   return {
     skill,
-    jobs: matchedJobs.length,
-    github: gitData.total_count,
-    reddit: redditPosts,
     score,
-    verdict,
+    jobs: matchedJobs.slice(0, 5),
+    repos: topRepos,
+    reddit: redditPosts,
   };
 }
 
-export default function SkillComparisonPro() {
-  const [skillA, setSkillA] = useState("");
-  const [skillB, setSkillB] = useState("");
-  const [dataA, setDataA] = useState(null);
-  const [dataB, setDataB] = useState(null);
+/* ---------- MAIN COMPONENT ---------- */
+export default function AutoSkillComparisonPro() {
+  const [skill, setSkill] = useState("");
+  const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const compare = async () => {
-    if (!skillA || !skillB) return alert("Enter both skills");
+  const run = async () => {
+    if (!skill) return alert("Enter a skill");
     setLoading(true);
 
-    const a = await analyzeSkill(skillA);
-    const b = await analyzeSkill(skillB);
+    const category = detectCategory(skill);
+    const competitors = CATEGORY_MAP[category] || [];
 
-    setDataA(a);
-    setDataB(b);
+    const allSkills = [skill, ...competitors];
 
-    localStorage.setItem(
-      "skillComparison",
-      JSON.stringify({ a, b })
-    );
+    const analyzed = [];
+    for (const s of allSkills) {
+      analyzed.push(await analyzeSkill(s));
+    }
 
+    setResults(analyzed);
     setLoading(false);
   };
 
   return (
     <div style={styles.wrapper}>
-      <h1>Skill Comparison</h1>
+      <h1>Auto Skill Comparison</h1>
       <p style={styles.sub}>
-        Compare two skills using real market data
+        Enter one skill — we automatically compare it with market alternatives
       </p>
 
-      <div style={styles.inputs}>
-        <input
-          placeholder="Skill A (e.g. React)"
-          value={skillA}
-          onChange={(e) => setSkillA(e.target.value)}
-          style={styles.input}
-        />
-        <input
-          placeholder="Skill B (e.g. Angular)"
-          value={skillB}
-          onChange={(e) => setSkillB(e.target.value)}
-          style={styles.input}
-        />
-      </div>
+      <input
+        value={skill}
+        onChange={(e) => setSkill(e.target.value)}
+        placeholder="e.g. Social Media, React, Python"
+        style={styles.input}
+      />
 
-      <button onClick={compare} style={styles.btn}>
-        {loading ? "Comparing..." : "Compare Skills"}
+      <button onClick={run} style={styles.btn}>
+        {loading ? "Analyzing..." : "Analyze & Compare"}
       </button>
 
-      {(dataA && dataB) && (
-        <div style={styles.grid}>
-          {[dataA, dataB].map((d, i) => (
-            <div key={i} style={styles.card}>
-              <h2>{d.skill}</h2>
-              <h1>{d.score}/100</h1>
-              <p>{d.verdict}</p>
+      <div style={styles.grid}>
+        {results.map((r, i) => (
+          <div key={i} style={styles.card}>
+            <h2>{r.skill}</h2>
+            <h1>{r.score}/100</h1>
 
-              <div style={styles.bar}>
-                <div
-                  style={{
-                    ...styles.barFill,
-                    width: `${d.score}%`,
-                  }}
-                />
-              </div>
+            <h4>💼 Jobs</h4>
+            {r.jobs.map((j) => (
+              <a key={j.id} href={j.url} target="_blank" rel="noreferrer">
+                {j.position}
+              </a>
+            ))}
 
-              <p>💼 Jobs: {d.jobs}</p>
-              <p>⭐ GitHub Repos: {d.github.toLocaleString()}</p>
-              <p>💬 Reddit Posts: {d.reddit}</p>
-            </div>
-          ))}
-        </div>
-      )}
+            <h4>⭐ GitHub Repos</h4>
+            {r.repos.map((repo, i) => (
+              <a key={i} href={repo.url} target="_blank" rel="noreferrer">
+                {repo.name} ({repo.stars}★)
+              </a>
+            ))}
+
+            <h4>💬 Reddit Posts</h4>
+            {r.reddit.map((p, i) => (
+              <a key={i} href={p.url} target="_blank" rel="noreferrer">
+                {p.title}
+              </a>
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -136,21 +155,21 @@ export default function SkillComparisonPro() {
 /* ---------- STYLES ---------- */
 const styles = {
   wrapper: {
-    maxWidth: "900px",
+    maxWidth: "1000px",
     margin: "40px auto",
-    padding: "30px",
+    padding: "32px",
     background: "#f8f9fb",
     fontFamily: "Inter, sans-serif",
     textAlign: "left",
     borderRadius: "14px",
   },
   sub: { color: "#555", marginBottom: "20px" },
-  inputs: { display: "flex", gap: "12px", marginBottom: "12px" },
   input: {
-    flex: 1,
-    padding: "12px",
+    width: "100%",
+    padding: "14px",
     borderRadius: "10px",
     border: "1px solid #ccc",
+    marginBottom: "12px",
   },
   btn: {
     background: "#000",
@@ -161,21 +180,17 @@ const styles = {
     cursor: "pointer",
     marginBottom: "30px",
   },
-  grid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))",
+    gap: "20px",
+  },
   card: {
     background: "#fff",
-    padding: "24px",
-    borderRadius: "14px",
-  },
-  bar: {
-    height: "10px",
-    background: "#eee",
-    borderRadius: "10px",
-    marginBottom: "12px",
-  },
-  barFill: {
-    height: "100%",
-    background: "#000",
-    borderRadius: "10px",
+    padding: "20px",
+    borderRadius: "12px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
   },
 };
