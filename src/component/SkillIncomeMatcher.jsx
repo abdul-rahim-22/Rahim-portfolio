@@ -1,122 +1,127 @@
 import React, { useState, useEffect } from "react";
 
-const API_URL =
+const API =
   "https://corsproxy.io/?https://remoteok.com/api";
 
-const SkillIncomeMatcher = () => {
+export default function SkillDemandChecker() {
   const [skill, setSkill] = useState("");
-  const [jobs, setJobs] = useState([]);
   const [result, setResult] = useState(null);
+  const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Load saved result
+  // load saved data
   useEffect(() => {
-    const saved = localStorage.getItem("realSkillMatcher");
-    if (saved) setResult(JSON.parse(saved));
+    const saved = localStorage.getItem("skillDemandReal");
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      setResult(parsed.result);
+      setJobs(parsed.jobs);
+    }
   }, []);
 
-  // Save result
+  // save data
   useEffect(() => {
     if (result) {
-      localStorage.setItem("realSkillMatcher", JSON.stringify(result));
+      localStorage.setItem(
+        "skillDemandReal",
+        JSON.stringify({ result, jobs })
+      );
     }
-  }, [result]);
+  }, [result, jobs]);
 
-  const fetchJobs = async () => {
-    if (!skill) return alert("Enter a skill");
+  const checkDemand = async () => {
+    if (!skill) return alert("Enter any skill");
 
     setLoading(true);
 
     try {
-      const res = await fetch(API_URL);
+      const res = await fetch(API);
       const data = await res.json();
 
-      // Remove metadata object
+      // remove first metadata object
       const jobList = data.slice(1);
 
-      // Match skill with tags
-      const matchedJobs = jobList.filter(
-        (job) =>
-          job.tags &&
-          job.tags.some((tag) =>
-            tag.toLowerCase().includes(skill.toLowerCase())
-          )
+      const matched = jobList.filter((job) => {
+        const text =
+          `${job.position} ${job.description} ${job.tags?.join(" ")}`.toLowerCase();
+        return text.includes(skill.toLowerCase());
+      });
+
+      // sort by date (latest first)
+      matched.sort(
+        (a, b) => (b.date || 0) - (a.date || 0)
       );
 
       const output = {
         skill,
-        totalJobs: matchedJobs.length,
+        totalJobs: matched.length,
         demand:
-          matchedJobs.length > 50
-            ? "🔥 High"
-            : matchedJobs.length > 20
+          matched.length > 60
+            ? "🔥 Very High"
+            : matched.length > 25
             ? "⚡ Medium"
             : "❄️ Low",
-        companies: matchedJobs.slice(0, 5).map((j) => j.company),
+        checkedAt: new Date().toLocaleString(),
       };
 
-      setJobs(matchedJobs.slice(0, 5));
       setResult(output);
-    } catch (err) {
-      alert("API error");
+      setJobs(matched.slice(0, 7)); // latest 7 jobs
+    } catch (e) {
+      alert("Failed to fetch jobs");
     }
 
     setLoading(false);
   };
 
   return (
-    <div style={styles.box}>
-      <h2>🌍 REAL Skill Demand Checker</h2>
+    <div style={styles.container}>
+      <h2>🌍 Real Skill Demand Checker</h2>
 
       <input
         style={styles.input}
-        placeholder="Enter skill (e.g. react, python)"
+        placeholder="Enter ANY skill (React, Excel, AI, QA...)"
         value={skill}
         onChange={(e) => setSkill(e.target.value)}
       />
 
-      <button style={styles.button} onClick={fetchJobs}>
-        {loading ? "Checking..." : "Check Real Demand"}
+      <button onClick={checkDemand} style={styles.button}>
+        {loading ? "Checking..." : "Check Real Jobs"}
       </button>
 
       {result && (
-        <div style={styles.result}>
+        <div style={styles.card}>
           <p><b>Skill:</b> {result.skill}</p>
-          <p><b>Remote Jobs Found:</b> {result.totalJobs}</p>
+          <p><b>Total Remote Jobs:</b> {result.totalJobs}</p>
           <p><b>Demand Level:</b> {result.demand}</p>
-
-          <p><b>Top Hiring Companies:</b></p>
-          <ul>
-            {result.companies.map((c, i) => (
-              <li key={i}>{c}</li>
-            ))}
-          </ul>
+          <p><b>Last Checked:</b> {result.checkedAt}</p>
         </div>
       )}
 
       {jobs.length > 0 && (
         <div>
-          <h4>Sample Jobs</h4>
+          <h3>🆕 Latest Jobs</h3>
           {jobs.map((job) => (
             <div key={job.id} style={styles.job}>
-              <a href={job.url} target="_blank">
-                {job.position}
+              <a href={job.url} target="_blank" rel="noreferrer">
+                <b>{job.position}</b>
               </a>
+              <p>{job.company}</p>
+              <small>Tags: {job.tags?.join(", ")}</small>
             </div>
           ))}
         </div>
       )}
     </div>
   );
-};
+}
 
 const styles = {
-  box: {
-    maxWidth: "500px",
+  container: {
+    maxWidth: "520px",
     margin: "40px auto",
     padding: "20px",
+    background: "#f5f5f5",
     fontFamily: "sans-serif",
-    background: "#f4f4f4",
     borderRadius: "10px",
   },
   input: {
@@ -131,16 +136,15 @@ const styles = {
     color: "#fff",
     cursor: "pointer",
   },
-  result: {
+  card: {
     background: "#fff",
     padding: "15px",
     marginTop: "15px",
   },
   job: {
     background: "#fff",
-    padding: "8px",
-    marginTop: "5px",
+    padding: "10px",
+    marginTop: "10px",
+    borderRadius: "6px",
   },
 };
-
-export default SkillIncomeMatcher;
