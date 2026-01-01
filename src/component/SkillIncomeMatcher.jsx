@@ -2,18 +2,19 @@ import React, { useState } from "react";
 
 const REMOTEOK = "https://corsproxy.io/?https://remoteok.com/api";
 
-export default function ProfessionalSkillDashboard() {
+export default function SkillAndCVDashboard() {
   const [skill, setSkill] = useState("");
   const [jobs, setJobs] = useState([]);
-  const [repos, setRepos] = useState([]);
   const [posts, setPosts] = useState([]);
+  const [cvText, setCvText] = useState("");
+  const [cvFeedback, setCvFeedback] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const analyze = async () => {
+  /* -------- SKILL RESEARCH -------- */
+  const researchSkill = async () => {
     if (!skill) return alert("Enter a skill");
     setLoading(true);
 
-    /* ---------------- JOBS ---------------- */
     try {
       const jobRes = await fetch(REMOTEOK);
       const jobData = await jobRes.json();
@@ -25,42 +26,20 @@ export default function ProfessionalSkillDashboard() {
           .includes(skill.toLowerCase())
       );
 
-      setJobs(matchedJobs.slice(0, 8));
+      setJobs(matchedJobs.slice(0, 6));
     } catch {
       setJobs([]);
     }
 
-    /* ---------------- GITHUB ---------------- */
-    try {
-      const gitRes = await fetch(
-        `https://api.github.com/search/repositories?q=${skill}&sort=stars&order=desc`
-      );
-      const gitData = await gitRes.json();
-
-      setRepos(
-        (gitData.items || []).slice(0, 5).map((r) => ({
-          name: r.full_name,
-          url: r.html_url,
-          stars: r.stargazers_count,
-          description: r.description,
-        }))
-      );
-    } catch {
-      setRepos([]);
-    }
-
-    /* ---------------- REDDIT ---------------- */
     try {
       const redRes = await fetch(
-        `https://corsproxy.io/?https://www.reddit.com/search.json?q=${skill}&limit=6`
+        `https://corsproxy.io/?https://www.reddit.com/search.json?q=${skill}+jobs&limit=6`
       );
       const redData = await redRes.json();
-
       setPosts(
         redData.data.children.map((p) => ({
           title: p.data.title,
           url: "https://reddit.com" + p.data.permalink,
-          subreddit: p.data.subreddit,
         }))
       );
     } catch {
@@ -70,13 +49,63 @@ export default function ProfessionalSkillDashboard() {
     setLoading(false);
   };
 
+  /* -------- CV UPLOAD -------- */
+  const handleCVUpload = (file) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target.result;
+      setCvText(text);
+      analyzeCV(text);
+    };
+    reader.readAsText(file);
+  };
+
+  /* -------- CV ANALYSIS -------- */
+  const analyzeCV = (text) => {
+    const feedback = [];
+    const lower = text.toLowerCase();
+
+    if (!lower.includes("summary") && !lower.includes("profile")) {
+      feedback.push("❗ Add a professional summary at the top.");
+    }
+
+    if (!lower.includes("skills")) {
+      feedback.push("❗ Skills section missing. Recruiters scan skills first.");
+    }
+
+    if (!lower.includes("experience")) {
+      feedback.push("❗ Work experience section not found.");
+    }
+
+    if (!lower.includes("project")) {
+      feedback.push("⭐ Add projects to strengthen your profile.");
+    }
+
+    if (text.length < 1500) {
+      feedback.push("⚠️ CV looks too short. Add more details.");
+    }
+
+    if (text.length > 6000) {
+      feedback.push("⚠️ CV is too long. Keep it concise (1–2 pages).");
+    }
+
+    if (!lower.match(/\b\d+%|\b\d+\+|\b\d+ years/)) {
+      feedback.push(
+        "⭐ Add numbers (%, years, results) to show impact."
+      );
+    }
+
+    setCvFeedback(feedback);
+  };
+
   return (
     <div style={styles.page}>
-      <h1 style={styles.title}>Skill Market Research</h1>
+      <h1>Professional Skill & CV Dashboard</h1>
       <p style={styles.subtitle}>
-        Real hiring data, open-source activity, and community signals
+        Real job market data + resume quality analysis
       </p>
 
+      {/* SKILL INPUT */}
       <input
         style={styles.input}
         placeholder="Enter a skill (e.g. Social Media, React, Python)"
@@ -84,8 +113,8 @@ export default function ProfessionalSkillDashboard() {
         onChange={(e) => setSkill(e.target.value)}
       />
 
-      <button style={styles.button} onClick={analyze}>
-        {loading ? "Loading data…" : "Research Skill"}
+      <button style={styles.button} onClick={researchSkill}>
+        {loading ? "Loading…" : "Research Skill"}
       </button>
 
       {/* JOBS */}
@@ -104,41 +133,46 @@ export default function ProfessionalSkillDashboard() {
         </section>
       )}
 
-      {/* GITHUB */}
-      {repos.length > 0 && (
-        <section style={styles.section}>
-          <h2>Open-Source Activity</h2>
-          {repos.map((repo, i) => (
-            <div key={i} style={styles.item}>
-              <a href={repo.url} target="_blank" rel="noreferrer">
-                <strong>{repo.name}</strong>
-              </a>
-              <div>{repo.description}</div>
-              <small>⭐ {repo.stars.toLocaleString()}</small>
-            </div>
-          ))}
-        </section>
-      )}
-
       {/* REDDIT */}
       {posts.length > 0 && (
         <section style={styles.section}>
-          <h2>Recent Community Discussions</h2>
+          <h2>Community Discussions</h2>
           {posts.map((p, i) => (
             <div key={i} style={styles.item}>
               <a href={p.url} target="_blank" rel="noreferrer">
                 {p.title}
               </a>
-              <small>r/{p.subreddit}</small>
             </div>
           ))}
+        </section>
+      )}
+
+      {/* CV UPLOAD */}
+      <section style={styles.section}>
+        <h2>CV Analysis</h2>
+        <input
+          type="file"
+          accept=".txt"
+          onChange={(e) => handleCVUpload(e.target.files[0])}
+        />
+      </section>
+
+      {/* CV FEEDBACK */}
+      {cvFeedback.length > 0 && (
+        <section style={styles.section}>
+          <h2>CV Improvement Suggestions</h2>
+          <ul>
+            {cvFeedback.map((f, i) => (
+              <li key={i}>{f}</li>
+            ))}
+          </ul>
         </section>
       )}
     </div>
   );
 }
 
-/* ---------------- STYLES ---------------- */
+/* -------- STYLES -------- */
 const styles = {
   page: {
     maxWidth: "900px",
@@ -146,9 +180,8 @@ const styles = {
     padding: "32px",
     fontFamily: "Inter, system-ui, sans-serif",
     textAlign: "left",
-    background: "#ffffff",
+    background: "#fff",
   },
-  title: { marginBottom: "4px" },
   subtitle: { color: "#555", marginBottom: "24px" },
   input: {
     width: "100%",
@@ -156,7 +189,6 @@ const styles = {
     borderRadius: "8px",
     border: "1px solid #ccc",
     marginBottom: "12px",
-    fontSize: "15px",
   },
   button: {
     padding: "12px 20px",
@@ -167,9 +199,7 @@ const styles = {
     cursor: "pointer",
     marginBottom: "30px",
   },
-  section: {
-    marginBottom: "40px",
-  },
+  section: { marginBottom: "40px" },
   item: {
     padding: "12px 0",
     borderBottom: "1px solid #eee",
