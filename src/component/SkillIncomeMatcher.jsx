@@ -1,141 +1,104 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 
-const API = "https://corsproxy.io/?https://remoteok.com/api";
+const REMOTEOK =
+  "https://corsproxy.io/?https://remoteok.com/api";
 
-export default function AdvancedSkillDemand() {
-  const [skills, setSkills] = useState("");
+export default function UltimateSkillAnalyzer() {
+  const [skill, setSkill] = useState("");
   const [jobs, setJobs] = useState([]);
-  const [stats, setStats] = useState(null);
+  const [github, setGithub] = useState(null);
+  const [reddit, setReddit] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Load saved
+  // load saved
   useEffect(() => {
-    const saved = localStorage.getItem("advancedSkillDemand");
+    const saved = localStorage.getItem("ultimateSkillData");
     if (saved) {
       const parsed = JSON.parse(saved);
       setJobs(parsed.jobs);
-      setStats(parsed.stats);
+      setGithub(parsed.github);
+      setReddit(parsed.reddit);
+      setSkill(parsed.skill);
     }
   }, []);
 
-  // Save
+  // save
   useEffect(() => {
-    if (stats) {
+    if (skill) {
       localStorage.setItem(
-        "advancedSkillDemand",
-        JSON.stringify({ jobs, stats })
+        "ultimateSkillData",
+        JSON.stringify({ skill, jobs, github, reddit })
       );
     }
-  }, [jobs, stats]);
+  }, [skill, jobs, github, reddit]);
 
   const analyze = async () => {
-    if (!skills) return alert("Enter skills");
-
+    if (!skill) return alert("Enter any skill");
     setLoading(true);
+
     try {
-      const res = await fetch(API);
-      const data = await res.json();
-      const jobList = data.slice(1);
+      /* -------- Remote Jobs -------- */
+      const jobRes = await fetch(REMOTEOK);
+      const jobData = await jobRes.json();
+      const jobList = jobData.slice(1);
 
-      const skillArray = skills
-        .split(",")
-        .map((s) => s.trim().toLowerCase());
-
-      const matched = jobList.filter((job) => {
-        const text = `${job.position} ${job.description} ${job.tags?.join(" ")}`.toLowerCase();
-        return skillArray.some((s) => text.includes(s));
+      const matchedJobs = jobList.filter((job) => {
+        const text =
+          `${job.position} ${job.description} ${job.tags?.join(" ")}`.toLowerCase();
+        return text.includes(skill.toLowerCase());
       });
 
-      matched.sort((a, b) => (b.date || 0) - (a.date || 0));
+      matchedJobs.sort((a, b) => (b.date || 0) - (a.date || 0));
+      setJobs(matchedJobs.slice(0, 7));
 
-      const demandLevel =
-        matched.length > 80
-          ? "Very High"
-          : matched.length > 40
-          ? "High"
-          : matched.length > 15
-          ? "Medium"
-          : "Low";
-
-      setStats({
-        skills: skillArray,
-        totalJobs: matched.length,
-        demand: demandLevel,
-        checkedAt: new Date().toLocaleString(),
+      /* -------- GitHub -------- */
+      const gitRes = await fetch(
+        `https://api.github.com/search/repositories?q=${skill}&sort=stars&order=desc`
+      );
+      const gitData = await gitRes.json();
+      setGithub({
+        totalRepos: gitData.total_count,
+        topRepo: gitData.items?.[0]?.full_name,
+        stars: gitData.items?.[0]?.stargazers_count,
       });
 
-      setJobs(matched.slice(0, 10));
-    } catch {
+      /* -------- Reddit -------- */
+      const redRes = await fetch(
+        `https://www.reddit.com/search.json?q=${skill}+jobs&limit=10`
+      );
+      const redData = await redRes.json();
+      setReddit({
+        posts: redData.data.children.length,
+      });
+    } catch (e) {
       alert("API error");
     }
-    setLoading(false);
-  };
 
-  const clearAll = () => {
-    localStorage.removeItem("advancedSkillDemand");
-    setJobs([]);
-    setStats(null);
-    setSkills("");
+    setLoading(false);
   };
 
   return (
     <div style={styles.wrapper}>
-      <h1 style={styles.title}>Skill Demand Analyzer</h1>
-      <p style={styles.subtitle}>
-        Check real global remote job demand for any skill using live market data.
+      <h1>Skill Market Intelligence</h1>
+      <p style={styles.sub}>
+        Real-time career insights using free global data sources
       </p>
 
-      <div style={styles.inputGroup}>
-        <label style={styles.label}>Enter Skills</label>
-        <input
-          value={skills}
-          onChange={(e) => setSkills(e.target.value)}
-          placeholder="e.g. React, Python, Excel"
-          style={styles.input}
-        />
-        <small style={styles.hint}>
-          Separate multiple skills with commas
-        </small>
-      </div>
+      <input
+        value={skill}
+        onChange={(e) => setSkill(e.target.value)}
+        placeholder="Enter any skill (React, Python, Excel, AI...)"
+        style={styles.input}
+      />
 
-      <div style={styles.actions}>
-        <button onClick={analyze} style={styles.primaryBtn}>
-          {loading ? "Analyzing..." : "Analyze Market"}
-        </button>
-        <button onClick={clearAll} style={styles.secondaryBtn}>
-          Clear
-        </button>
-      </div>
+      <button onClick={analyze} style={styles.btn}>
+        {loading ? "Analyzing..." : "Analyze Skill"}
+      </button>
 
-      {stats && (
-        <div style={styles.card}>
-          <h3 style={styles.cardTitle}>Market Summary</h3>
-          <p><b>Skills:</b> {stats.skills.join(", ")}</p>
-          <p><b>Total Jobs:</b> {stats.totalJobs}</p>
-          <p><b>Demand Level:</b> {stats.demand}</p>
-          <p><b>Last Updated:</b> {stats.checkedAt}</p>
-
-          <div style={styles.bar}>
-            <div
-              style={{
-                ...styles.barFill,
-                width:
-                  stats.totalJobs > 80
-                    ? "100%"
-                    : stats.totalJobs > 40
-                    ? "70%"
-                    : stats.totalJobs > 15
-                    ? "40%"
-                    : "20%",
-              }}
-            />
-          </div>
-        </div>
-      )}
-
+      {/* JOBS */}
       {jobs.length > 0 && (
-        <div style={styles.card}>
-          <h3 style={styles.cardTitle}>Latest Job Openings</h3>
+        <section style={styles.card}>
+          <h3>Latest Remote Jobs</h3>
           {jobs.map((job) => (
             <div key={job.id} style={styles.job}>
               <a href={job.url} target="_blank" rel="noreferrer">
@@ -145,7 +108,27 @@ export default function AdvancedSkillDemand() {
               <small>{job.tags?.join(", ")}</small>
             </div>
           ))}
-        </div>
+        </section>
+      )}
+
+      {/* GITHUB */}
+      {github && (
+        <section style={styles.card}>
+          <h3>GitHub Popularity</h3>
+          <p><b>Total Repositories:</b> {github.totalRepos}</p>
+          <p><b>Top Repo:</b> {github.topRepo}</p>
+          <p><b>Stars:</b> ⭐ {github.stars}</p>
+        </section>
+      )}
+
+      {/* REDDIT */}
+      {reddit && (
+        <section style={styles.card}>
+          <h3>Community Buzz (Reddit)</h3>
+          <p>
+            <b>Recent Job Discussions:</b> {reddit.posts}
+          </p>
+        </section>
       )}
     </div>
   );
@@ -153,41 +136,31 @@ export default function AdvancedSkillDemand() {
 
 const styles = {
   wrapper: {
-    maxWidth: "700px",
+    maxWidth: "760px",
     margin: "40px auto",
     padding: "30px",
     fontFamily: "Inter, sans-serif",
-    background: "#f8f9fb",
-    color: "#111",
     textAlign: "left",
+    background: "#f8f9fb",
     borderRadius: "12px",
   },
-  title: { marginBottom: "5px" },
-  subtitle: { marginBottom: "25px", color: "#555" },
-  inputGroup: { marginBottom: "20px" },
-  label: { fontWeight: "600", display: "block", marginBottom: "6px" },
+  sub: { color: "#555", marginBottom: "20px" },
   input: {
     width: "100%",
     padding: "12px",
+    marginBottom: "12px",
     fontSize: "15px",
     borderRadius: "8px",
     border: "1px solid #ccc",
   },
-  hint: { color: "#777" },
-  actions: { display: "flex", gap: "10px", marginBottom: "25px" },
-  primaryBtn: {
+  btn: {
     padding: "12px 20px",
     background: "#000",
     color: "#fff",
-    border: "none",
     borderRadius: "8px",
+    border: "none",
     cursor: "pointer",
-  },
-  secondaryBtn: {
-    padding: "12px 20px",
-    background: "#ddd",
-    border: "none",
-    borderRadius: "8px",
+    marginBottom: "25px",
   },
   card: {
     background: "#fff",
@@ -195,20 +168,8 @@ const styles = {
     borderRadius: "10px",
     marginBottom: "25px",
   },
-  cardTitle: { marginBottom: "10px" },
   job: {
     padding: "10px 0",
     borderBottom: "1px solid #eee",
-  },
-  bar: {
-    height: "8px",
-    background: "#eee",
-    borderRadius: "10px",
-    marginTop: "10px",
-  },
-  barFill: {
-    height: "100%",
-    background: "#000",
-    borderRadius: "10px",
   },
 };
