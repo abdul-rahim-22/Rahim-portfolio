@@ -1,43 +1,46 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
-const REMOTEOK =
-  "https://corsproxy.io/?https://remoteok.com/api";
+const REMOTEOK = "https://corsproxy.io/?https://remoteok.com/api";
 
-export default function UltimateSkillAnalyzer() {
+export default function FinalProSkillAnalyzer() {
   const [skill, setSkill] = useState("");
   const [jobs, setJobs] = useState([]);
   const [github, setGithub] = useState(null);
   const [reddit, setReddit] = useState(null);
+  const [score, setScore] = useState(null);
+  const [verdict, setVerdict] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // load saved
+  /* ---------- LOAD / SAVE ---------- */
   useEffect(() => {
-    const saved = localStorage.getItem("ultimateSkillData");
+    const saved = localStorage.getItem("proSkillAnalyzer");
     if (saved) {
-      const parsed = JSON.parse(saved);
-      setJobs(parsed.jobs);
-      setGithub(parsed.github);
-      setReddit(parsed.reddit);
-      setSkill(parsed.skill);
+      const d = JSON.parse(saved);
+      setSkill(d.skill);
+      setJobs(d.jobs);
+      setGithub(d.github);
+      setReddit(d.reddit);
+      setScore(d.score);
+      setVerdict(d.verdict);
     }
   }, []);
 
-  // save
   useEffect(() => {
-    if (skill) {
+    if (score !== null) {
       localStorage.setItem(
-        "ultimateSkillData",
-        JSON.stringify({ skill, jobs, github, reddit })
+        "proSkillAnalyzer",
+        JSON.stringify({ skill, jobs, github, reddit, score, verdict })
       );
     }
-  }, [skill, jobs, github, reddit]);
+  }, [skill, jobs, github, reddit, score, verdict]);
 
-  const analyze = async () => {
-    if (!skill) return alert("Enter any skill");
+  /* ---------- MAIN LOGIC ---------- */
+  const analyzeSkill = async () => {
+    if (!skill) return alert("Enter a skill");
     setLoading(true);
 
     try {
-      /* -------- Remote Jobs -------- */
+      /* ---- Remote Jobs ---- */
       const jobRes = await fetch(REMOTEOK);
       const jobData = await jobRes.json();
       const jobList = jobData.slice(1);
@@ -49,27 +52,43 @@ export default function UltimateSkillAnalyzer() {
       });
 
       matchedJobs.sort((a, b) => (b.date || 0) - (a.date || 0));
-      setJobs(matchedJobs.slice(0, 7));
+      const latestJobs = matchedJobs.slice(0, 6);
+      setJobs(latestJobs);
 
-      /* -------- GitHub -------- */
+      /* ---- GitHub ---- */
       const gitRes = await fetch(
         `https://api.github.com/search/repositories?q=${skill}&sort=stars&order=desc`
       );
       const gitData = await gitRes.json();
+
+      const gitScore = Math.min(gitData.total_count / 1000, 30);
+
       setGithub({
-        totalRepos: gitData.total_count,
-        topRepo: gitData.items?.[0]?.full_name,
-        stars: gitData.items?.[0]?.stargazers_count,
+        repos: gitData.total_count,
+        stars: gitData.items?.[0]?.stargazers_count || 0,
       });
 
-      /* -------- Reddit -------- */
+      /* ---- Reddit ---- */
       const redRes = await fetch(
-        `https://www.reddit.com/search.json?q=${skill}+jobs&limit=10`
+        `https://www.reddit.com/search.json?q=${skill}+jobs&limit=20`
       );
       const redData = await redRes.json();
-      setReddit({
-        posts: redData.data.children.length,
-      });
+
+      const redditScore = redData.data.children.length * 2;
+      setReddit({ posts: redData.data.children.length });
+
+      /* ---- FINAL SCORE ---- */
+      const jobScore = Math.min(matchedJobs.length, 50);
+      const finalScore = Math.min(
+        Math.round(jobScore + gitScore + redditScore),
+        100
+      );
+
+      setScore(finalScore);
+
+      if (finalScore >= 75) setVerdict("🟢 STRONG CAREER SKILL");
+      else if (finalScore >= 45) setVerdict("🟡 GROWING BUT COMPETITIVE");
+      else setVerdict("🔴 LOW DEMAND – UPSKILL NEEDED");
     } catch (e) {
       alert("API error");
     }
@@ -77,28 +96,60 @@ export default function UltimateSkillAnalyzer() {
     setLoading(false);
   };
 
+  const saveSkill = () => {
+    alert("⭐ Skill saved (LocalStorage)");
+  };
+
+  /* ---------- UI ---------- */
   return (
     <div style={styles.wrapper}>
-      <h1>Skill Market Intelligence</h1>
+      <h1 style={styles.title}>Skill Market Intelligence</h1>
       <p style={styles.sub}>
-        Real-time career insights using free global data sources
+        Real-time career insights using free global data
       </p>
 
       <input
+        style={styles.input}
+        placeholder="Enter any skill (React, Python, Excel, AI...)"
         value={skill}
         onChange={(e) => setSkill(e.target.value)}
-        placeholder="Enter any skill (React, Python, Excel, AI...)"
-        style={styles.input}
       />
 
-      <button onClick={analyze} style={styles.btn}>
-        {loading ? "Analyzing..." : "Analyze Skill"}
-      </button>
+      <div style={styles.actions}>
+        <button style={styles.primary} onClick={analyzeSkill}>
+          {loading ? "Analyzing..." : "Analyze Skill"}
+        </button>
+        <button style={styles.secondary} onClick={saveSkill}>
+          ⭐ Save
+        </button>
+      </div>
+
+      {/* SCORE */}
+      {score !== null && (
+        <div style={styles.card}>
+          <h2 style={styles.score}>{score}/100</h2>
+          <p style={styles.verdict}>{verdict}</p>
+
+          <div style={styles.meter}>
+            <div
+              style={{
+                ...styles.meterFill,
+                width: `${score}%`,
+              }}
+            />
+          </div>
+
+          <p style={styles.explain}>
+            {skill} is evaluated using live job demand, open-source adoption,
+            and community discussions.
+          </p>
+        </div>
+      )}
 
       {/* JOBS */}
       {jobs.length > 0 && (
-        <section style={styles.card}>
-          <h3>Latest Remote Jobs</h3>
+        <div style={styles.card}>
+          <h3>🆕 Latest Remote Jobs</h3>
           {jobs.map((job) => (
             <div key={job.id} style={styles.job}>
               <a href={job.url} target="_blank" rel="noreferrer">
@@ -108,68 +159,99 @@ export default function UltimateSkillAnalyzer() {
               <small>{job.tags?.join(", ")}</small>
             </div>
           ))}
-        </section>
+        </div>
       )}
 
-      {/* GITHUB */}
-      {github && (
-        <section style={styles.card}>
-          <h3>GitHub Popularity</h3>
-          <p><b>Total Repositories:</b> {github.totalRepos}</p>
-          <p><b>Top Repo:</b> {github.topRepo}</p>
-          <p><b>Stars:</b> ⭐ {github.stars}</p>
-        </section>
+      {/* GITHUB + REDDIT */}
+      {(github || reddit) && (
+        <div style={styles.card}>
+          <h3>Market Signals</h3>
+          {github && (
+            <p>
+              ⭐ GitHub Repositories: <b>{github.repos.toLocaleString()}</b>
+            </p>
+          )}
+          {reddit && (
+            <p>
+              💬 Reddit Job Discussions: <b>{reddit.posts}</b>
+            </p>
+          )}
+        </div>
       )}
 
-      {/* REDDIT */}
-      {reddit && (
-        <section style={styles.card}>
-          <h3>Community Buzz (Reddit)</h3>
-          <p>
-            <b>Recent Job Discussions:</b> {reddit.posts}
-          </p>
-        </section>
+      {/* CAREER PATH */}
+      {score !== null && (
+        <div style={styles.card}>
+          <h3>Recommended Next Skills</h3>
+          <ul>
+            <li>TypeScript</li>
+            <li>System Design</li>
+            <li>Cloud Basics</li>
+          </ul>
+        </div>
       )}
     </div>
   );
 }
 
+/* ---------- STYLES ---------- */
 const styles = {
   wrapper: {
-    maxWidth: "760px",
+    maxWidth: "820px",
     margin: "40px auto",
-    padding: "30px",
+    padding: "32px",
+    background: "#f8f9fb",
     fontFamily: "Inter, sans-serif",
     textAlign: "left",
-    background: "#f8f9fb",
-    borderRadius: "12px",
+    borderRadius: "14px",
   },
-  sub: { color: "#555", marginBottom: "20px" },
+  title: { marginBottom: "4px" },
+  sub: { color: "#555", marginBottom: "24px" },
   input: {
     width: "100%",
-    padding: "12px",
-    marginBottom: "12px",
+    padding: "14px",
     fontSize: "15px",
-    borderRadius: "8px",
+    borderRadius: "10px",
     border: "1px solid #ccc",
+    marginBottom: "12px",
   },
-  btn: {
-    padding: "12px 20px",
+  actions: { display: "flex", gap: "10px", marginBottom: "24px" },
+  primary: {
     background: "#000",
     color: "#fff",
-    borderRadius: "8px",
+    padding: "12px 22px",
+    borderRadius: "10px",
     border: "none",
     cursor: "pointer",
-    marginBottom: "25px",
+  },
+  secondary: {
+    background: "#e5e5e5",
+    padding: "12px 22px",
+    borderRadius: "10px",
+    border: "none",
   },
   card: {
     background: "#fff",
-    padding: "20px",
-    borderRadius: "10px",
-    marginBottom: "25px",
+    padding: "22px",
+    borderRadius: "12px",
+    marginBottom: "26px",
   },
+  score: { fontSize: "40px", margin: "0" },
+  verdict: { fontWeight: "600", marginBottom: "10px" },
+  meter: {
+    height: "10px",
+    background: "#eee",
+    borderRadius: "10px",
+    marginBottom: "12px",
+  },
+  meterFill: {
+    height: "100%",
+    background: "#000",
+    borderRadius: "10px",
+  },
+  explain: { color: "#555" },
   job: {
-    padding: "10px 0",
+    padding: "12px 0",
     borderBottom: "1px solid #eee",
   },
 };
