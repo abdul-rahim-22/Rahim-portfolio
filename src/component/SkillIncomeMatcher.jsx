@@ -1,207 +1,167 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-const REMOTEOK = "https://corsproxy.io/?https://remoteok.com/api";
+const WEAK_PHRASES = [
+  "responsible for",
+  "worked on",
+  "helped with",
+  "tasked with",
+];
 
-export default function SkillAndCVDashboard() {
-  const [skill, setSkill] = useState("");
-  const [jobs, setJobs] = useState([]);
-  const [posts, setPosts] = useState([]);
-  const [cvText, setCvText] = useState("");
-  const [cvFeedback, setCvFeedback] = useState([]);
-  const [loading, setLoading] = useState(false);
+const REQUIRED_SECTIONS = [
+  "summary",
+  "skills",
+  "experience",
+];
 
-  /* -------- SKILL RESEARCH -------- */
-  const researchSkill = async () => {
-    if (!skill) return alert("Enter a skill");
-    setLoading(true);
+export default function LiveCVAnalyzer() {
+  const [text, setText] = useState("");
+  const [issues, setIssues] = useState([]);
 
-    try {
-      const jobRes = await fetch(REMOTEOK);
-      const jobData = await jobRes.json();
-      const jobList = jobData.slice(1);
+  useEffect(() => {
+    analyze(text);
+  }, [text]);
 
-      const matchedJobs = jobList.filter((job) =>
-        `${job.position} ${job.description} ${job.tags?.join(" ")}`
-          .toLowerCase()
-          .includes(skill.toLowerCase())
-      );
+  const analyze = (content) => {
+    const problems = [];
+    const lower = content.toLowerCase();
 
-      setJobs(matchedJobs.slice(0, 6));
-    } catch {
-      setJobs([]);
+    // Missing sections
+    REQUIRED_SECTIONS.forEach((sec) => {
+      if (!lower.includes(sec)) {
+        problems.push({
+          type: "missing",
+          message: `Missing "${sec}" section`,
+        });
+      }
+    });
+
+    // Weak phrases
+    WEAK_PHRASES.forEach((phrase) => {
+      if (lower.includes(phrase)) {
+        problems.push({
+          type: "weak",
+          phrase,
+          message: `Weak phrase detected: "${phrase}"`,
+        });
+      }
+    });
+
+    // No metrics
+    if (!content.match(/\b\d+%|\b\d+\+|\$\d+|\b\d+ years/)) {
+      problems.push({
+        type: "metrics",
+        message: "No measurable results found (%, $, years)",
+      });
     }
 
-    try {
-      const redRes = await fetch(
-        `https://corsproxy.io/?https://www.reddit.com/search.json?q=${skill}+jobs&limit=6`
-      );
-      const redData = await redRes.json();
-      setPosts(
-        redData.data.children.map((p) => ({
-          title: p.data.title,
-          url: "https://reddit.com" + p.data.permalink,
-        }))
-      );
-    } catch {
-      setPosts([]);
+    // Length checks
+    if (content.length > 0 && content.length < 1200) {
+      problems.push({
+        type: "length",
+        message: "CV is too short (ATS prefers detailed CV)",
+      });
     }
 
-    setLoading(false);
+    if (content.length > 6000) {
+      problems.push({
+        type: "length",
+        message: "CV is too long (keep it 1–2 pages)",
+      });
+    }
+
+    setIssues(problems);
   };
 
-  /* -------- CV UPLOAD -------- */
-  const handleCVUpload = (file) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target.result;
-      setCvText(text);
-      analyzeCV(text);
-    };
-    reader.readAsText(file);
-  };
+  const highlightText = () => {
+    let highlighted = text;
 
-  /* -------- CV ANALYSIS -------- */
-  const analyzeCV = (text) => {
-    const feedback = [];
-    const lower = text.toLowerCase();
-
-    if (!lower.includes("summary") && !lower.includes("profile")) {
-      feedback.push("❗ Add a professional summary at the top.");
-    }
-
-    if (!lower.includes("skills")) {
-      feedback.push("❗ Skills section missing. Recruiters scan skills first.");
-    }
-
-    if (!lower.includes("experience")) {
-      feedback.push("❗ Work experience section not found.");
-    }
-
-    if (!lower.includes("project")) {
-      feedback.push("⭐ Add projects to strengthen your profile.");
-    }
-
-    if (text.length < 1500) {
-      feedback.push("⚠️ CV looks too short. Add more details.");
-    }
-
-    if (text.length > 6000) {
-      feedback.push("⚠️ CV is too long. Keep it concise (1–2 pages).");
-    }
-
-    if (!lower.match(/\b\d+%|\b\d+\+|\b\d+ years/)) {
-      feedback.push(
-        "⭐ Add numbers (%, years, results) to show impact."
+    WEAK_PHRASES.forEach((phrase) => {
+      const regex = new RegExp(phrase, "gi");
+      highlighted = highlighted.replace(
+        regex,
+        `<span class="issue">$&</span>`
       );
-    }
+    });
 
-    setCvFeedback(feedback);
+    return highlighted.replace(/\n/g, "<br />");
   };
 
   return (
     <div style={styles.page}>
-      <h1>Professional Skill & CV Dashboard</h1>
-      <p style={styles.subtitle}>
-        Real job market data + resume quality analysis
+      <h1>Live CV Analyzer</h1>
+      <p style={styles.sub}>
+        Paste your resume — issues will be highlighted in real time
       </p>
 
-      {/* SKILL INPUT */}
-      <input
-        style={styles.input}
-        placeholder="Enter a skill (e.g. Social Media, React, Python)"
-        value={skill}
-        onChange={(e) => setSkill(e.target.value)}
-      />
-
-      <button style={styles.button} onClick={researchSkill}>
-        {loading ? "Loading…" : "Research Skill"}
-      </button>
-
-      {/* JOBS */}
-      {jobs.length > 0 && (
-        <section style={styles.section}>
-          <h2>Live Remote Jobs</h2>
-          {jobs.map((job) => (
-            <div key={job.id} style={styles.item}>
-              <a href={job.url} target="_blank" rel="noreferrer">
-                <strong>{job.position}</strong>
-              </a>
-              <div>{job.company}</div>
-              <small>{job.tags?.join(", ")}</small>
-            </div>
-          ))}
-        </section>
-      )}
-
-      {/* REDDIT */}
-      {posts.length > 0 && (
-        <section style={styles.section}>
-          <h2>Community Discussions</h2>
-          {posts.map((p, i) => (
-            <div key={i} style={styles.item}>
-              <a href={p.url} target="_blank" rel="noreferrer">
-                {p.title}
-              </a>
-            </div>
-          ))}
-        </section>
-      )}
-
-      {/* CV UPLOAD */}
-      <section style={styles.section}>
-        <h2>CV Analysis</h2>
-        <input
-          type="file"
-          accept=".txt"
-          onChange={(e) => handleCVUpload(e.target.files[0])}
+      <div style={styles.editorWrapper}>
+        <div
+          style={styles.editor}
+          contentEditable
+          onInput={(e) => setText(e.currentTarget.innerText)}
+          dangerouslySetInnerHTML={{ __html: highlightText() }}
         />
-      </section>
 
-      {/* CV FEEDBACK */}
-      {cvFeedback.length > 0 && (
-        <section style={styles.section}>
-          <h2>CV Improvement Suggestions</h2>
+        <div style={styles.panel}>
+          <h3>Issues Found</h3>
+
+          {issues.length === 0 && (
+            <p style={{ color: "green" }}>
+              ✅ No critical issues detected
+            </p>
+          )}
+
           <ul>
-            {cvFeedback.map((f, i) => (
-              <li key={i}>{f}</li>
+            {issues.map((i, idx) => (
+              <li key={idx}>{i.message}</li>
             ))}
           </ul>
-        </section>
-      )}
+
+          <h4>How to Fix</h4>
+          <ul>
+            <li>Use action verbs (Led, Built, Improved)</li>
+            <li>Add numbers (% growth, users, revenue)</li>
+            <li>Include Summary, Skills, Experience</li>
+            <li>Avoid weak phrases</li>
+          </ul>
+        </div>
+      </div>
+
+      <style>{`
+        .issue {
+          text-decoration: underline;
+          text-decoration-color: red;
+          text-decoration-thickness: 2px;
+        }
+      `}</style>
     </div>
   );
 }
 
-/* -------- STYLES -------- */
 const styles = {
   page: {
-    maxWidth: "900px",
+    maxWidth: "1100px",
     margin: "40px auto",
-    padding: "32px",
     fontFamily: "Inter, system-ui, sans-serif",
     textAlign: "left",
-    background: "#fff",
   },
-  subtitle: { color: "#555", marginBottom: "24px" },
-  input: {
-    width: "100%",
-    padding: "14px",
-    borderRadius: "8px",
+  sub: { color: "#555", marginBottom: "20px" },
+  editorWrapper: {
+    display: "grid",
+    gridTemplateColumns: "1fr 400px",
+    gap: "20px",
+  },
+  editor: {
+    minHeight: "500px",
+    padding: "20px",
     border: "1px solid #ccc",
-    marginBottom: "12px",
-  },
-  button: {
-    padding: "12px 20px",
     borderRadius: "8px",
-    border: "none",
-    background: "#000",
-    color: "#fff",
-    cursor: "pointer",
-    marginBottom: "30px",
+    outline: "none",
+    whiteSpace: "pre-wrap",
   },
-  section: { marginBottom: "40px" },
-  item: {
-    padding: "12px 0",
-    borderBottom: "1px solid #eee",
+  panel: {
+    border: "1px solid #eee",
+    borderRadius: "8px",
+    padding: "16px",
+    background: "#fafafa",
   },
 };
