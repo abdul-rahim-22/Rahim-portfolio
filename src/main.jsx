@@ -32,7 +32,7 @@ createRoot(document.getElementById('root')).render(
   <Portfolio/>
   <Processs/>
 {/* <AIArticleWriter/> */}
-  <SkillIncomeMatcher/>
+  {/* <SkillIncomeMatcher/> */}
   <Footer/>
   </>
  
