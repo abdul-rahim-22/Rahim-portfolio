@@ -20,7 +20,7 @@ import SkillIncomeMatcher from "./component/SkillIncomeMatcher.jsx";
 
 createRoot(document.getElementById('root')).render(
   <>
-  {/* <SplashCursor/> */}
+  <SplashCursor/> 
   <SpeedInsights />
   <Header/>
   <Herosection/>
