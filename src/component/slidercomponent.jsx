@@ -85,20 +85,20 @@ const ClientSlider = () => {
       {/* ===== Slider 1 (Left to Right) ===== */}
       <div className="client-slider-container">
         <div className="client-slider" id="client-slider-1">
-          <img src="https://rs-digitalmarketing.com/wp-content/uploads/2025/04/1.avif" alt="1" />
-          <img src="https://rs-digitalmarketing.com/wp-content/uploads/2025/04/2-1.avif" alt="2" />
-          <img src="https://rs-digitalmarketing.com/wp-content/uploads/2025/04/3.avif" alt="3" />
-          <img src="https://rs-digitalmarketing.com/wp-content/uploads/2025/04/6.avif" alt="4" />
+          <img src="src/assets/1-updraft-pre-smush-original.png" alt="1" />
+          <img src="src/assets/2-1.png.webp" alt="2" />
+          <img src="src/assets/3.png.webp" alt="3" />
+          <img src="src/assets/4.png.webp" alt="4" />
         </div>
       </div>
 
       {/* ===== Slider 2 (Right to Left) ===== */}
       <div className="client-slider-container">
         <div className="client-slider" id="client-slider-2">
-          <img src="https://rs-digitalmarketing.com/wp-content/uploads/2025/04/9.avif" alt="5" />
-          <img src="https://rs-digitalmarketing.com/wp-content/uploads/2025/04/10.avif" alt="6" />
-          <img src="https://rs-digitalmarketing.com/wp-content/uploads/2025/04/5.avif" alt="7" />
-          <img src="https://rs-digitalmarketing.com/wp-content/uploads/2025/04/4.avif" alt="8" />
+          <img src="src/assets/5.png.webp" alt="5" />
+          <img src="src/assets/6.png.webp" alt="6" />
+          <img src="src/assets/7.png.webp" alt="7" />
+          <img src="src/assets/8.png.webp" alt="8" />
         </div>
       </div>
     </div>
