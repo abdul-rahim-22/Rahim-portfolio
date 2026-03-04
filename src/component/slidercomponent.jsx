@@ -70,6 +70,16 @@
 
 import React, { useEffect } from "react";
 // import "./ClientSlider.css";
+import img1 from "../assets/1-updraft-pre-smush-original.png";
+import img2 from "../assets/2-1.png.webp";
+import img3 from "../assets/3.png.webp";
+import img4 from "../assets/4.avif";
+import img5 from "../assets/5-updraft-pre-smush-original.png";
+import img6 from "../assets/6.avif";
+import img7 from "../assets/7.png.webp";
+import img8 from "../assets/8.png.webp";
+import img9 from "../assets/9.png.webp";
+import img10 from "../assets/10.png.webp";
 
 const ClientSlider = () => {
   useEffect(() => {
@@ -83,22 +93,24 @@ const ClientSlider = () => {
   return (
     <div className="w-full overflow-hidden">
       {/* ===== Slider 1 (Left to Right) ===== */}
-      <div className="client-slider-container">
+        <div className="client-slider-container">
         <div className="client-slider" id="client-slider-1">
-          <img src="src/assets/1-updraft-pre-smush-original.png" alt="1" />
-          <img src="src/assets/2-1.png.webp" alt="2" />
-          <img src="src/assets/3.png.webp" alt="3" />
-          <img src="src/assets/4.png.webp" alt="4" />
+          <img src={img1} alt="Client logo 1: Professional brand identity" />
+          <img src={img2} alt="Client logo 2: Modern corporate branding" />
+          <img src={img3} alt="3" />
+          <img src={img4} alt="4" />
+          <img src={img9} alt="9" />
+          <img src={img10} alt="10" />
         </div>
-      </div>
+        </div>
 
       {/* ===== Slider 2 (Right to Left) ===== */}
       <div className="client-slider-container">
         <div className="client-slider" id="client-slider-2">
-          <img src="src/assets/5.png.webp" alt="5" />
-          <img src="src/assets/6.png.webp" alt="6" />
-          <img src="src/assets/7.png.webp" alt="7" />
-          <img src="src/assets/8.png.webp" alt="8" />
+          <img src={img5} alt="5" />
+          <img src={img6} alt="6" />
+          <img src={img7} alt="7" />
+          <img src={img8} alt="8" />
         </div>
       </div>
     </div>
